@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LibreCAD — Веб-версия</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #2b2b2b; }
+
+        /* ---- Splash / loader overlay ---- */
+        #splash {
+            position: fixed; inset: 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            color: #ddd; font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            z-index: 100;
+            transition: opacity 0.5s ease;
+        }
+        #splash.loaded { opacity: 0; pointer-events: none; }
+        #splash img { width: 160px; height: auto; margin-bottom: 20px; opacity: 0.85; }
+        #splash h1 { font-size: 26px; margin-bottom: 4px; font-weight: 600; }
+        #status { color: #888; font-size: 13px; min-height: 18px; margin-bottom: 16px; }
+        #progress-bar {
+            width: 280px; height: 4px;
+            background: #333; border-radius: 2px; overflow: hidden;
+        }
+        #progress-fill {
+            height: 100%; width: 0%;
+            background: linear-gradient(90deg, #0078d4, #00a4ef);
+            transition: width 0.3s ease;
+        }
+        #progress-fill.indeterminate {
+            width: 30%;
+            animation: indeterminate-slide 1.4s ease-in-out infinite;
+        }
+        @keyframes indeterminate-slide {
+            0%   { margin-left: -30%; }
+            100% { margin-left: 100%; }
+        }
+
+        /* ---- Console panel (inside splash) ---- */
+        #console-toggle {
+            margin-top: 18px;
+            font-size: 12px; color: #666;
+            cursor: pointer; user-select: none;
+            border: 1px solid #333; border-radius: 3px;
+            padding: 4px 12px;
+            transition: color 0.2s, border-color 0.2s;
+        }
+        #console-toggle:hover { color: #aaa; border-color: #555; }
+        #console-toggle::before { content: "▸ "; }
+        #console-toggle.open::before { content: "▾ "; }
+
+        #console-panel {
+            width: 680px; max-width: 90vw;
+            height: 220px;
+            background: rgba(0,0,0,0.45);
+            border: 1px solid #222; border-radius: 4px;
+            margin-top: 10px;
+            font-family: "SF Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+            font-size: 11px; line-height: 1.5;
+            overflow-y: auto; overflow-x: hidden;
+            padding: 8px 12px;
+            display: none;
+        }
+        #console-panel.open { display: block; }
+        #console-panel .log-line { white-space: pre-wrap; word-break: break-all; }
+        #console-panel .log-stdout { color: #ccc; }
+        #console-panel .log-stderr { color: #e88; }
+        #console-panel .log-debug  { color: #88c; }
+        #console-panel .log-sys   { color: #8a8; font-style: italic; }
+
+        /* ---- Qt container ---- */
+        #qt-container {
+            position: absolute; inset: 0;
+            display: none;
+        }
+        #qt-container canvas { width: 100%; height: 100%; }
+
+        /* ---- Floating debug toggle (after launch) ---- */
+        #debug-toggle {
+            position: fixed; bottom: 8px; right: 8px;
+            z-index: 200;
+            font-family: -apple-system, "Segoe UI", sans-serif;
+            font-size: 11px; color: #999;
+            background: rgba(30,30,40,0.8);
+            border: 1px solid #444; border-radius: 4px;
+            padding: 4px 10px;
+            cursor: pointer; user-select: none;
+            display: none;
+        }
+        #debug-toggle:hover { color: #ccc; border-color: #666; }
+
+        /* ---- Debug console overlay (after launch) ---- */
+        #debug-console {
+            position: fixed; bottom: 36px; right: 8px;
+            width: 500px; height: 280px;
+            z-index: 200;
+            background: rgba(20,20,30,0.92);
+            border: 1px solid #444; border-radius: 4px;
+            font-family: "SF Mono", Consolas, monospace;
+            font-size: 11px; line-height: 1.5;
+            overflow-y: auto;
+            padding: 8px 12px;
+            display: none;
+        }
+        #debug-console.open { display: block; }
+        #debug-console .log-line { white-space: pre-wrap; word-break: break-all; }
+        #debug-console .log-stdout { color: #ccc; }
+        #debug-console .log-stderr { color: #e88; }
+        #debug-console .log-debug  { color: #88c; }
+        #debug-console .log-sys   { color: #8a8; font-style: italic; }
+    </style>
+</head>
+<body>
+
+<!-- Splash / Loader -->
+<div id="splash">
+    <img src="librecad-logo.svg" alt="LibreCAD" onerror="this.style.display='none'">
+    <h1>LibreCAD</h1>
+    <div id="status">Запуск&hellip;</div>
+    <div id="progress-bar"><div id="progress-fill" class="indeterminate"></div></div>
+    <div id="console-toggle" onclick="toggleConsole()">Показать лог</div>
+    <div id="console-panel"></div>
+</div>
+
+<!-- Qt app container -->
+<div id="qt-container"></div>
+
+<!-- Debug toggle (after launch) -->
+<div id="debug-toggle" onclick="toggleDebugConsole()">&#9000; Консоль</div>
+<div id="debug-console"></div>
+
+<script>
+// ---- Console capture ----
+// Both the splash console and the post-launch debug console share this buffer.
+var splashConsole = document.getElementById('console-panel');
+var debugConsole   = document.getElementById('debug-console');
+var debugToggle    = document.getElementById('debug-toggle');
+
+var MAX_LOG_LINES = 2000;
+var logBuffer = []; // {type, text} entries
+
+function appendLog(type, text) {
+    var entry = {type: type, text: text};
+    logBuffer.push(entry);
+    if (logBuffer.length > MAX_LOG_LINES)
+        logBuffer.shift();
+    renderLogEntry(splashConsole, entry);
+    renderLogEntry(debugConsole, entry);
+    // Auto-scroll both
+    splashConsole.scrollTop = splashConsole.scrollHeight;
+    debugConsole.scrollTop = debugConsole.scrollHeight;
+}
+
+function renderLogEntry(panel, entry) {
+    var div = document.createElement('div');
+    div.className = 'log-line log-' + entry.type;
+    div.textContent = entry.text;
+    panel.appendChild(div);
+    // Trim old nodes to avoid unbounded growth
+    while (panel.childNodes.length > MAX_LOG_LINES)
+        panel.removeChild(panel.firstChild);
+}
+
+function toggleConsole() {
+    var panel = splashConsole;
+    var btn = document.getElementById('console-toggle');
+    panel.classList.toggle('open');
+    btn.classList.toggle('open');
+    btn.textContent = panel.classList.contains('open') ? 'Скрыть лог' : 'Показать лог';
+    if (panel.classList.contains('open'))
+        panel.scrollTop = panel.scrollHeight;
+}
+
+function toggleDebugConsole() {
+    debugConsole.classList.toggle('open');
+    if (debugConsole.classList.contains('open'))
+        debugConsole.scrollTop = debugConsole.scrollHeight;
+}
+
+// ---- Loader ----
+var splash = document.getElementById('splash');
+var statusEl = document.getElementById('status');
+var progressFill = document.getElementById('progress-fill');
+var qtContainer = document.getElementById('qt-container');
+
+var appLoaded = false;
+
+function setProgress(percent) {
+    progressFill.classList.remove('indeterminate');
+    progressFill.style.width = Math.min(100, Math.max(0, percent)) + '%';
+}
+
+function setStatus(text) {
+    if (!text) return;
+    statusEl.textContent = text;
+    // Parse Emscripten progress patterns like "Downloading data... (5000/10000)"
+    var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
+    if (m) {
+        var done = parseFloat(m[2]);
+        var total = parseFloat(m[4]);
+        if (total > 0) setProgress((done / total) * 100);
+    }
+}
+
+function hideSplash() {
+    splash.classList.add('loaded');
+    setTimeout(function() { splash.style.display = 'none'; }, 600);
+}
+
+function showApp() {
+    qtContainer.style.display = 'block';
+    debugToggle.style.display = 'block';
+    appLoaded = true;
+    appendLog('sys', '—— приложение загружено, скрываем заставку ——');
+}
+</script>
+
+<!-- librecad.js defines window.librecad_entry (MODULARIZE factory).
+     Must load before qtloader.js, which defines qtLoad(). -->
+<script src="librecad.js"></script>
+<script src="qtloader.js"></script>
+<script>
+// qtLoad() returns a Promise; call it after both scripts have loaded.
+qtLoad({
+    // Emscripten Module hooks — capture stdout/stderr and progress.
+    // These are forwarded to the MODULARIZE entry function as Module config.
+    print: function(text) {
+        appendLog('stdout', text);
+    },
+    printErr: function(text) {
+        appendLog('stderr', text);
+    },
+    setStatus: function(text) {
+        setStatus(text);
+    },
+    monitorRunDependencies: function(left) {
+        this.totalDependencies = Math.max(this.totalDependencies || 0, left);
+        var total = this.totalDependencies;
+        if (left > 0) {
+            setStatus('Подготовка… (' + (total - left) + '/' + total + ')');
+            if (total > 0) setProgress(((total - left) / total) * 100);
+        } else {
+            setStatus('Загрузка завершена.');
+            setProgress(100);
+        }
+    },
+    onRuntimeInitialized: function() {
+        appendLog('sys', 'Среда WASM инициализирована');
+        setStatus('Инициализация движка…');
+    },
+    onAbort: function(text) {
+        appendLog('stderr', 'ПРЕРВАНО: ' + (text || '(нет сообщения)'));
+    },
+
+    // Qt-specific config
+    qt: {
+        entryFunction: window.librecad_entry,
+        containerElements: [qtContainer],
+        onLoaded: function() {
+            appendLog('sys', 'onLoaded — приложение Qt готово');
+            setProgress(100);
+            hideSplash();
+            showApp();
+        },
+        onExit: function(info) {
+            appendLog('sys', 'Приложение завершило работу' + (info.crashed ? ' (аварийно)' : '') +
+                       (info.text ? ': ' + info.text : ''));
+            qtContainer.style.display = 'none';
+            debugToggle.style.display = 'none';
+            debugConsole.classList.remove('open');
+            // Show splash again
+            splash.style.display = 'flex';
+            splash.classList.remove('loaded');
+            statusEl.textContent = info.crashed
+                ? 'Приложение аварийно завершилось. Перезагрузите страницу.'
+                : 'Приложение завершено. Перезагрузите страницу для перезапуска.';
+            // Auto-open console so the user can see what happened
+            if (!splashConsole.classList.contains('open')) toggleConsole();
+        }
+    }
+}).catch(function(e) {
+    appendLog('stderr', 'Ошибка qtLoad: ' + (e && e.message ? e.message : e));
+    appendLog('stderr', (e && e.stack ? e.stack : ''));
+    statusEl.textContent = 'Не удалось загрузить. Смотрите лог.';
+    if (!splashConsole.classList.contains('open')) toggleConsole();
+});
+
+// Expose toggle functions globally for onclick attributes
+window.toggleConsole = toggleConsole;
+window.toggleDebugConsole = toggleDebugConsole;
+</script>
+
+</body>
+</html>

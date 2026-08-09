@@ -1,0 +1,681 @@
+/****************************************************************************
+**
+** This file is part of the LibreCAD project, a 2D CAD program
+**
+** Copyright (C) 2026 LibreCAD www.librecad.org
+** Copyright (C) 2018 A. Stebich (librecad@mail.lordofbikes.de)
+** Copyright (C) 2018 Simon Wells <simonrwells@gmail.com>
+** Copyright (C) 2020 Nikita Letov <letovnn@gmail.com>
+** Copyright (C) 2015-2016 ravas (github.com/r-a-v-a-s)
+** Copyright (C) 2010 R. van Twisk (librecad@rvt.dds.nl)
+** Copyright (C) 2001-2003 RibbonSoft. All rights reserved.
+**
+** This file may be distributed and/or modified under the terms of the
+** GNU General Public License version 2 as published by the Free Software
+** Foundation and appearing in the file gpl-2.0.txt included in the
+** packaging of this file.
+**
+** This program is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+** GNU General Public License for more details.
+**
+** You should have received a copy of the GNU General Public License
+** along with this program; if not, write to the Free Software
+** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+**
+** This copyright notice MUST APPEAR in all copies of the script!
+**
+**********************************************************************/
+#include <clocale>
+#include <cstdio>
+#include <cstddef>
+#include <cstdint>
+#include <ctime>
+#include <cstdlib>
+#include <cstring>
+
+#include <QApplication>
+#include <QByteArray>
+#include <QDebug>
+#include <QFileInfo>
+#include <QGuiApplication>
+#include <QMessageBox>
+#include <QPainter>
+#include <QPixmap>
+#include <QSettings>
+#include <QSplashScreen>
+
+#include <QDir>
+#include <QPushButton>
+#include <QTimer>
+#include <QToolBar>
+
+#ifndef __EMSCRIPTEN__
+#include "console_command_utils.h"
+#include "console_dxf2dwg.h"
+#include "console_dxf2pdf.h"
+#include "console_dxf2png.h"
+#endif
+#include "lc_application.h"
+#include "lc_crash_handler.h"
+#include "main.h"
+
+#include "lc_iconcolorsoptions.h"
+#include "qc_applicationwindow.h"
+#include "qg_dlginitial.h"
+#include "rs_debug.h"
+#include "rs_fontlist.h"
+#include "rs_patternlist.h"
+#include "rs_settings.h"
+#include "rs_system.h"
+
+// default version: if not supplied by during building
+#ifndef LC_VERSION
+#define LC_VERSION "2.2.2-alpha"
+#endif
+
+// fixme - sand - files - complete refactoring
+namespace
+{
+// To a plain text string to the compiled binary
+const std::string g_lcVersion{"LC_VISION=" XSTR(LC_VERSION)};
+
+// update splash for alpha/beta names)
+    void updateSplash(const std::unique_ptr<QSplashScreen>& splash);
+}
+
+void showFirstLoadSetupDialog(bool first_load) {
+    LC_GROUP_GUARD("Defaults");
+    {
+        QString unit = LC_GET_STR("Unit", "Invalid");
+        // show initial config dialog:
+        if (first_load){
+            RS_DEBUG->print("main: show initial config dialog..");
+            QG_DlgInitial di(nullptr);
+            QPixmap pxm(":/images/intro_librecad.png");
+            di.setPixmap(pxm);
+            if (di.exec()) {
+                unit = LC_GET_STR("Unit", "None");
+            }
+            RS_DEBUG->print("main: show initial config dialog: OK");
+        }
+    }
+}
+
+int showHelpMessage() {
+    qDebug()<<"Usage: librecad [command] <options> <input file>";
+    qDebug()<<"";
+    qDebug()<<"Commands:";
+    qDebug()<<"";
+    qDebug()<<"  dxf2pdf\tConvert DXF file(s) to PDF. Use -h for help.";
+    qDebug()<<"  dwg2pdf\tConvert DWG file(s) to PDF. Use -h for help.";
+    qDebug()<<"  dxf2png\tConvert DXF file(s) to PNG. Use -h for help.";
+    qDebug()<<"  dwg2png\tConvert DWG file(s) to PNG. Use -h for help.";
+    qDebug()<<"  dxf2svg\tConvert DXF file(s) to SVG. Use -h for help.";
+    qDebug()<<"  dwg2svg\tConvert DWG file(s) to SVG. Use -h for help.";
+    qDebug()<<"  dxf2dwg\tConvert DXF file(s) to DWG. Use -h for help.";
+    qDebug()<<"  dwg2dxf\tConvert DWG file(s) to DXF. Use -h for help.";
+    qDebug()<<"";
+    qDebug()<<"Options:";
+    qDebug()<<"";
+    qDebug()<<"  -h, --help\tdisplay this message";
+    qDebug()<<"  -d, --debug <level>";
+    qDebug()<<"";
+    RS_DEBUG->print( RS_Debug::D_NOTHING, "possible debug levels:");
+    RS_DEBUG->print( RS_Debug::D_NOTHING, "    %d Nothing", RS_Debug::D_NOTHING);
+    RS_DEBUG->print( RS_Debug::D_NOTHING, "    %d Critical", RS_Debug::D_CRITICAL);
+    RS_DEBUG->print( RS_Debug::D_NOTHING, "    %d Error", RS_Debug::D_ERROR);
+    RS_DEBUG->print( RS_Debug::D_NOTHING, "    %d Warning", RS_Debug::D_WARNING);
+    RS_DEBUG->print( RS_Debug::D_NOTHING, "    %d Notice", RS_Debug::D_NOTICE);
+    RS_DEBUG->print( RS_Debug::D_NOTHING, "    %d Informational", RS_Debug::D_INFORMATIONAL);
+    RS_DEBUG->print( RS_Debug::D_NOTHING, "    %d Debugging", RS_Debug::D_DEBUGGING);
+    exit(0);
+}
+
+void showDebugSetupHelpMessage() {
+    RS_DEBUG->print(RS_Debug::D_NOTHING, "possible debug levels:");
+    RS_DEBUG->print(RS_Debug::D_NOTHING, "    %d Nothing", RS_Debug::D_NOTHING);
+    RS_DEBUG->print(RS_Debug::D_NOTHING, "    %d Critical", RS_Debug::D_CRITICAL);
+    RS_DEBUG->print(RS_Debug::D_NOTHING, "    %d Error", RS_Debug::D_ERROR);
+    RS_DEBUG->print(RS_Debug::D_NOTHING, "    %d Warning", RS_Debug::D_WARNING);
+    RS_DEBUG->print(RS_Debug::D_NOTHING, "    %d Notice", RS_Debug::D_NOTICE);
+    RS_DEBUG->print(RS_Debug::D_NOTHING, "    %d Informational", RS_Debug::D_INFORMATIONAL);
+    RS_DEBUG->print(RS_Debug::D_NOTHING, "    %d Debugging", RS_Debug::D_DEBUGGING);
+}
+
+void initFontList() {
+    RS_DEBUG->print("main: init fontlist..");
+    RS_FONTLIST->init();
+    RS_DEBUG->print("main: init fontlist: OK");
+}
+
+void initPatternList() {
+    RS_DEBUG->print("main: init patternlist..");
+    RS_PATTERNLIST->init();
+    RS_DEBUG->print("main: init patternlist: OK");
+}
+
+void loadTranslations() {
+    RS_DEBUG->print("main: loading translation..");
+
+    LC_GROUP("Appearance");
+    QString lang = LC_GET_STR("Language", "ru");
+    QString langCmd = LC_GET_STR("LanguageCmd", "ru");
+    LC_GROUP_END();
+
+    RS_SYSTEM->loadTranslation(lang, langCmd);
+    RS_DEBUG->print("main: loading translation: OK");
+}
+
+void initSystem(char** argv, LC_Application& app) {
+    RS_DEBUG->print("param 0: %s", argv[0]);
+
+    QFileInfo prgInfo( QFile::decodeName(argv[0]) );
+    QString prgDir(prgInfo.absolutePath());
+
+    RS_SYSTEM->init(app.applicationName(), app.applicationVersion(), XSTR(QC_APPDIR), prgDir);
+}
+
+void loadFilesOnStartup(QSplashScreen *splash, QC_ApplicationWindow& appWin, [[maybe_unused]]LC_Application& app, QStringList fileList) {
+    RS_DEBUG->print("main: loading files..");
+#ifdef __APPLE__
+    // get the file list from LC_Application
+    fileList << app.fileList();
+#endif
+
+    // reopen files that we open during last close of application
+    // we'll reopen them if no explicit files to open are provided in command line
+
+    appWin.openFilesOnStartup(fileList, splash);
+    RS_DEBUG->print("main: loading files: OK");
+}
+
+void loadIconsStylingOptions() {
+    LC_IconColorsOptions iconColorsOptions;
+    iconColorsOptions.loadSettings();
+    iconColorsOptions.applyOptions();
+}
+
+int execApplication(LC_Application& app) {
+    RS_DEBUG->print("main: entering Qt event loop");
+    QCoreApplication::processEvents();
+
+    int return_code = app.exec();
+
+    RS_DEBUG->print("main: exited Qt event loop");
+
+    // Destroy the singleton
+    QC_ApplicationWindow::getAppWindow().reset();
+    return return_code;
+}
+
+//
+bool setupDebugLevel(char level) {
+    switch(level){
+        case '?' : {
+            showDebugSetupHelpMessage();
+            return false;
+        }
+        case '0' + RS_Debug::D_NOTHING : {
+            RS_DEBUG->setLevel(RS_Debug::D_NOTHING);
+            break;
+        }
+        case '0' + RS_Debug::D_CRITICAL : {
+            RS_DEBUG->setLevel(RS_Debug::D_CRITICAL);
+            break;
+        }
+        case '0' + RS_Debug::D_ERROR : {
+            RS_DEBUG->setLevel(RS_Debug::D_ERROR);
+            break;
+        }
+        case '0' + RS_Debug::D_WARNING : {
+            RS_DEBUG->setLevel(RS_Debug::D_WARNING);
+            break;
+        }
+        case '0' + RS_Debug::D_NOTICE : {
+            RS_DEBUG->setLevel(RS_Debug::D_NOTICE);
+            break;
+        }
+        case '0' + RS_Debug::D_INFORMATIONAL : {
+            RS_DEBUG->setLevel(RS_Debug::D_INFORMATIONAL);
+            break;
+        }
+        case '0' + RS_Debug::D_DEBUGGING : {
+            RS_DEBUG->setLevel(RS_Debug::D_DEBUGGING);
+            break;
+        }
+        default : {
+            RS_DEBUG->setLevel(RS_Debug::D_DEBUGGING);
+            break;
+        }
+    }
+    return true;
+}
+
+
+#define QUICK_TEST_
+
+/**
+ * Main. Creates Application window.
+ */
+ // fixme - sand - refactor and split to several specialized functions
+#ifndef BUILD_TESTS
+
+int main(int argc, char** argv) {
+
+#ifdef QUICK_TEST
+
+#    else
+
+    LC_CrashHandler::install();
+
+    // Create compilater's error: this QT macros may be in .pro file only.
+    //QT_REQUIRE_VERSION(argc, argv, "6.4");
+
+    // May be this code must be on begin of main.cpp?
+    #if QT_VERSION < QT_VERSION_CHECK(6, 4, 0)
+        #error "This programm requires Qt6 ver.6.4.0 or higher."
+    #endif
+
+    // Check first two arguments in order to decide if we want to run librecad
+    // as console dxf2pdf or dxf2png tools. On Linux we can create a link to
+    // librecad executable and  name it dxf2pdf. So, we can run either:
+    //
+    //     librecad dxf2pdf [options] ...
+    //
+    // or just:
+    //
+    //     dxf2pdf [options] ...
+    //
+#ifndef __EMSCRIPTEN__
+    const LC_Console::CommandContext consoleCommand =
+        LC_Console::detectCommand(argc, argv, LC_Console::converterCommandNames());
+    if (!consoleCommand.commandName.isEmpty()) {
+        const QString& command = consoleCommand.commandName;
+        if (command == "dxf2pdf")
+            return console_dxf2pdf(argc, argv);
+        if (command == "dwg2pdf")
+            return console_dwg2pdf(argc, argv);
+        if (command == "dxf2png")
+            return console_dxf2png(argc, argv);
+        if (command == "dwg2png")
+            return console_dwg2png(argc, argv);
+        if (command == "dxf2svg")
+            return console_dxf2svg(argc, argv);
+        if (command == "dwg2svg")
+            return console_dwg2svg(argc, argv);
+        if (command == "dxf2dwg")
+            return consoleDxf2dwg(argc, argv);
+        if (command == "dwg2dxf")
+            return consoleDwg2dxf(argc, argv);
+    }
+#endif
+
+    RS_DEBUG->setLevel(RS_Debug::D_WARNING);
+
+    // Per-monitor DPI rounding policy must be set BEFORE QGuiApplication
+    // construction. Qt6's default is PassThrough (full fractional scales
+    // honoured); on Windows with 125% / 150% scaling that leaks subpixel
+    // metrics into widget layouts and can grow a window 1-2 logical pixels
+    // larger than the screen edge would otherwise allow. RoundPreferFloor
+    // gives stable integer scales and is the conventional Qt6 hardening.
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
+        Qt::HighDpiScaleFactorRoundingPolicy::RoundPreferFloor);
+#endif
+
+#if defined(__EMSCRIPTEN__) && defined(__WASM_EXCEPTIONS__)
+    // Async main (JSPI + native wasm exceptions build): with -fwasm-exceptions
+    // QApplication::exec() is unsupported, so main() returns early and the
+    // browser drives the Qt event loop. The application object must therefore
+    // outlive main() -- allocate it on the heap and intentionally leak it
+    // (the QC_ApplicationWindow singleton is likewise kept alive). Using a
+    // reference keeps every downstream `app.` usage unchanged.
+    LC_Application& app = *(new LC_Application(argc, argv));
+#else
+    LC_Application app(argc, argv);
+#endif
+    QCoreApplication::setOrganizationName("LibreCAD");
+    // Application name is "LibreCAD-<schemaMajor>" so each major release
+    // line gets its own QSettings backing store. RS_Settings::init() picks
+    // up the prior-major store on first launch and copies it in.
+    QCoreApplication::setApplicationName(
+        QStringLiteral("LibreCAD-%1").arg(RS_Settings::LC_SETTINGS_SCHEMA_MAJOR));
+    QCoreApplication::setApplicationVersion(XSTR(LC_VERSION));
+
+    // fixme - sand - NEED TO CHECK WHERE lc_svgicons.so is located under linux and mac!!! That's tested for Windows
+    auto appDir = app.applicationDirPath();
+    auto inconEnginesDir = appDir + "/iconengines";
+    app.addLibraryPath(inconEnginesDir);
+
+    RS_Settings::init(app.organizationName(), app.applicationName());
+
+    QGuiApplication::setDesktopFileName("librecad");
+
+    loadIconsStylingOptions();
+
+    bool first_load = LC_GET_ONE_BOOL("Startup", "FirstLoad", true);
+
+    bool allowOptions=true;
+    QList<int> argClean;
+
+#ifndef Q_OS_WASM
+    for (int i=0; i<argc; i++)   {
+        QString argstr(argv[i]);
+        if(allowOptions&&QString::compare("--", argstr)==0){
+            allowOptions=false;
+            continue;
+        }
+        const QString help0("-h"), help1("--help");
+        if (allowOptions && (help0.compare(argstr, Qt::CaseInsensitive)==0 ||
+                             help1.compare(argstr, Qt::CaseInsensitive)==0 )) {
+            return showHelpMessage();
+        }
+        const QString lpDebugSwitch0("-d"),lpDebugSwitch1("--debug") ;
+
+        if (allowOptions&& (argstr.startsWith(lpDebugSwitch0, Qt::CaseInsensitive) ||
+                             argstr.startsWith(lpDebugSwitch1, Qt::CaseInsensitive) )){
+            argClean<<i;
+
+            // to control the level of debugging output use --debug with level 0-6, e.g. --debug3
+            // for a list of debug levels use --debug?
+            // if no level follows, the debugging level is set
+            argstr.remove(QRegularExpression("^"+lpDebugSwitch0));
+            argstr.remove(QRegularExpression("^"+lpDebugSwitch1));
+            char level = '3';
+            if(argstr.size()==0){
+                if(i+1<argc){
+                    if(QRegularExpression(R"(\d*)").match(argv[i+1]).hasMatch()){
+                        ++i;
+                        qDebug()<<"reading "<<argv[i]<<" as debugging level";
+                        level=argv[i][0];
+                        argClean<<i;
+                    }
+                    else {
+                        level = '3';
+                    }
+                }
+                else {
+                    level = '3'; //default to D_WARNING
+                }
+            }
+            else {
+                level = argstr.toStdString()[0];
+            }
+
+            if (!setupDebugLevel(level)) {
+                return 0;
+            }
+        }
+    }
+    initSystem(argv, app);
+#else
+    // On wasm there are no CLI args; argv[0] is unreliable, so initialise
+    // the system with a safe default program dir instead of resolving it
+    // from argv[0] (which may be "/" or empty).
+    RS_SYSTEM->init(app.applicationName(), app.applicationVersion(), XSTR(QC_APPDIR), "/");
+#endif
+#ifndef Q_OS_WASM
+    showFirstLoadSetupDialog(first_load);
+#endif
+
+#ifndef Q_OS_WASM
+    std::unique_ptr<QSplashScreen> splash;
+    bool show_splash = LC_GET_ONE_BOOL("Startup","ShowSplash", true);
+
+    if (show_splash){
+        splash = std::make_unique<QSplashScreen>();
+        updateSplash(splash);
+        app.processEvents();
+        RS_DEBUG->print("main: splashscreen: OK");
+    }
+#else
+    std::unique_ptr<QSplashScreen> splash; // no splash screen on wasm
+#endif
+
+    initFontList();
+    initPatternList();
+    loadTranslations();
+
+    RS_DEBUG->print("main: creating main window..");
+    QC_ApplicationWindow& appWin = *QC_ApplicationWindow::getAppWindow();
+    auto& appWindow = QC_ApplicationWindow::getAppWindow();
+    if (appWindow != nullptr) {
+        appWindow->fireIconsRefresh();
+    }
+#ifdef __APPLE__
+    app.installEventFilter(&appWin);
+#endif
+    RS_DEBUG->print("main: setting caption");
+    appWin.setWindowTitle(app.applicationName());
+
+    RS_DEBUG->print("main: show main window");
+
+#ifndef Q_OS_WASM
+    QSettings settings; // fixme - direct invocation of settings
+    settings.beginGroup("Defaults");
+#ifdef __APPLE__
+    // One-time migration: older builds auto-wrote UseQtFileOpenDialog=0 on macOS
+    // at first launch, pinning existing users to the native (Cocoa) panel, which
+    // can fail to open on unsigned / locally-built bundles (silently aborting
+    // Open/Save/Export). Reset that stale default to the reliable Qt dialog once;
+    // afterwards the user's own choice (Options > General) is preserved.
+    if (!settings.value("UseQtFileOpenDialogMacMigrated", false).toBool()) {
+        settings.setValue("UseQtFileOpenDialog", 1);
+        settings.setValue("UseQtFileOpenDialogMacMigrated", true);
+    }
+#endif
+    if( !settings.contains("UseQtFileOpenDialog")) {
+#if defined(__linux__) || defined(__APPLE__)
+        // Default to the Qt-drawn file dialog rather than the native one:
+        // on Linux the native dialog has case-insensitive-filter issues (#791);
+        // on macOS the native (Cocoa) panel can fail to open on unsigned /
+        // locally-built bundles -- it returns immediately with no panel shown,
+        // silently aborting Open/Save/Export. Users can opt back into the native
+        // dialog via Options > General (takes effect on restart).
+        settings.setValue("UseQtFileOpenDialog", QVariant(1));
+#else
+        settings.setValue("UseQtFileOpenDialog", QVariant(0));
+#endif
+    }
+    const bool useQtFileDialog = settings.value("UseQtFileOpenDialog").toBool();
+    settings.endGroup();
+
+    // Honor that choice for EVERY file dialog-- including the static
+    // QFileDialog::getOpenFileName/getSaveFileName convenience calls, which
+    // cannot take a per-dialog option. Affects dialogs created after this point.
+    QApplication::setAttribute(Qt::AA_DontUseNativeDialogs, useQtFileDialog);
+#else
+    // On wasm native file dialogs are not available; always use Qt-drawn dialogs.
+    QApplication::setAttribute(Qt::AA_DontUseNativeDialogs, true);
+#endif
+
+
+    bool maximize = LC_GET_ONE_BOOL("Startup","Maximize", false);
+
+    if (maximize || first_load) {
+        appWin.showMaximized();
+    }
+    else {
+        appWin.show();
+    }
+
+    RS_DEBUG->print("main: set focus");
+    appWin.setFocus();
+    RS_DEBUG->print("main: creating main window: OK");
+
+    if (splash != nullptr){
+        RS_DEBUG->print("main: updating splash");
+        splash->raise();
+        splash->showMessage(QObject::tr("Loading..."), Qt::AlignRight|Qt::AlignBottom, Qt::black);
+        RS_DEBUG->print("main: processing events");
+        qApp->processEvents();
+        RS_DEBUG->print("main: updating splash: OK");
+    }
+
+    // Set LC_NUMERIC so that entering numeric values uses . as the decimal separator
+#ifndef Q_OS_WASM
+    setlocale(LC_NUMERIC, "C");
+#endif
+
+    // parse command line arguments that might not need a launched program:
+    // fixme - sand - add support of skipping of loading via cmdline flag
+#ifndef Q_OS_WASM
+    QStringList fileList = handleArgs(argc, argv, argClean);
+    loadFilesOnStartup(splash.get(), appWin, app, fileList);
+#else
+    // On wasm, no files to load from CLI
+    QStringList fileList;
+#endif
+
+    appWin.initCompleted();
+
+#ifndef Q_OS_WASM
+    if (splash != nullptr) {
+        splash->finish(&appWin);
+        splash.release();
+    }
+#endif
+
+#ifndef Q_OS_WASM
+    LC_GROUP("Startup");
+    {
+        // fixme - sand - files - add support of command line flag to suppress version check (may be useful for automation)!
+        bool checkForNewVersion = LC_GET_BOOL("CheckForNewVersions", true);
+        if (checkForNewVersion) {
+            appWin.checkForNewVersion();
+        }
+
+        if (first_load){
+            LC_SET("FirstLoad", false);
+        }
+    }
+    LC_GROUP_END();
+#else
+    LC_GROUP("Startup");
+    { if (first_load){ LC_SET("FirstLoad", false); } }
+    LC_GROUP_END();
+#endif
+
+#if defined(__EMSCRIPTEN__) && defined(__WASM_EXCEPTIONS__)
+    // JSPI + native wasm exceptions build: async main.
+    //
+    // QApplication::exec() is not usable here: on wasm it routes through
+    // QEventDispatcherWasm::handleApplicationExec(), which calls
+    // emscripten_set_main_loop(..., simulateInfiniteLoop=true). That returns
+    // control to the browser by throwing a JS "unwind" exception, which is
+    // incompatible with -fwasm-exceptions (hence the Qt docs' "exec() is not
+    // supported with exceptions" note). Instead we return from main() and let
+    // the browser drive Qt's event loop (Emscripten keeps the runtime alive as
+    // main() is not the process exit). `app` was heap-allocated above so it
+    // outlives main().
+    //
+    // JSPI suspends (QDialog::exec(), combobox popups, nested event loops) work
+    // because every wasm entry point that can reach a suspend is wrapped as a
+    // WebAssembly.promising frame: DOM events via EventListener::handleEvent
+    // (registered with emscripten::async(); see the Qt qstdweb.cpp patch in
+    // .wasm/Dockerfile.jspi) and timer/posted-event callbacks via the
+    // emscripten_set_timeout/emscripten_async_call promising wrap applied to the
+    // generated .js (see .wasm/jspi_postprocess.py). Unlike classic one-level
+    // Asyncify, JSPI allows arbitrary suspend nesting.
+    RS_DEBUG->print("main: async-main (JSPI) -- browser drives the event loop");
+    return 0;
+#else
+    return execApplication(app);
+#endif
+#    endif
+}
+#endif // BUILD_TESTS
+
+/**
+ * Handles command line arguments that might not require a GUI.
+ *
+ * @return list of files to load on startup.
+ */
+QStringList handleArgs(int argc, char** argv, const QList<int>& argClean){
+    RS_DEBUG->print("main: handling args..");
+    QStringList ret;
+
+    bool doexit = false;
+    for (int i = 1; i < argc; i++) {
+        if (argClean.indexOf(i) >= 0) {
+            continue;
+        }
+        auto localFileName = argv[i];
+        if (!QString(localFileName).startsWith("-")) {
+            auto decodedName = QFile::decodeName(localFileName);
+            QFileInfo fileInfo(decodedName);
+            auto absolutePath = fileInfo.absoluteFilePath();
+            QString fname = QDir::toNativeSeparators(absolutePath);
+            ret.append(fname);
+        }
+        else if (QString(localFileName) == "--exit") {
+            doexit = true;
+        }
+    }
+    if (doexit) {
+        exit(0);
+    }
+    RS_DEBUG->print("main: handling args: OK");
+    return ret;
+}
+
+QString LCReleaseLabel(){
+    QString version{XSTR(LC_VERSION)};
+    const std::map<QString, QString> labelMap = {
+        {"rc", QObject::tr("Release Candidate")},
+        {"beta", QObject::tr("BETA")},
+        {"alpha", QObject::tr("ALPHA")}
+    };
+    for (const auto& [key, value]: labelMap) {
+        if (version.contains(key, Qt::CaseInsensitive)) {
+            return value;
+        }
+    }
+
+    // Issue #2371: default version to alpha
+    return QObject::tr("ALPHA");
+}
+
+namespace {
+
+// Update Splash image to show "ALPHA", "BETA", and "Release Candidate"
+QPixmap getSplashImage(const std::unique_ptr<QSplashScreen>& splash, const QString& label);
+// Update Splash Screen
+    void updateSplash(const std::unique_ptr<QSplashScreen>& splash)
+    {
+        if (splash == nullptr)
+            return;
+
+    QString label = LCReleaseLabel();
+        if (label.isEmpty())
+            return;
+
+        QPixmap splashImage = getSplashImage(splash, label);
+        splash->setPixmap(splashImage);
+        splash->setAttribute(Qt::WA_DeleteOnClose);
+        splash->show();
+        splash->showMessage(QObject::tr("Loading.."),
+                            Qt::AlignRight|Qt::AlignBottom, Qt::black);
+    }
+
+// Update Splash image to show "ALPHA", "BETA", and "Release Candidate"
+    QPixmap getSplashImage(const std::unique_ptr<QSplashScreen>& splash, const QString& label)
+    {
+        if (splash == nullptr)
+            return {};
+
+        QPixmap pixmapSplash(":/images/splash_librecad.png");
+        QPainter painter(&pixmapSplash);
+        const double factorX = pixmapSplash.width()/542.;
+        const double factorY = pixmapSplash.height()/337.;
+        painter.setPen(QColor(255, 0, 0, 128));
+        QRectF labelRect{QPointF{280.*factorX, 130.*factorY}, QPointF{480.*factorX, 170.*factorY}};
+        QFont font;
+        font.setPixelSize(int(labelRect.height()) - 2);
+        painter.setFont(font);
+        painter.drawText(labelRect,Qt::AlignRight, label);
+        return pixmapSplash;
+    }
+}

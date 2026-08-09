@@ -1,0 +1,147 @@
+# JSPI toolchain: Qt 6.9.x built from source with first-class JSPI support.
+#
+# Qt 6.9 enables the WebAssembly JavaScript Promise Integration (JSPI) suspend
+# path via:
+#   -device-option QT_EMSCRIPTEN_ASYNCIFY=2   (2 == JSPI; 1 == classic Asyncify)
+#   -feature-wasm-exceptions                  (native Wasm-EH; removes the JS
+#                                              invoke_* trampolines that JSPI
+#                                              cannot suspend across)
+#
+# Unlike classic Asyncify (one level of suspend only), JSPI supports arbitrarily
+# nested event loops -- i.e. modal dialogs containing comboboxes and nested
+# dialogs (QColorDialog::exec() inside a QDialog::exec()), which is exactly what
+# LibreCAD's App Preferences / color pickers need.
+#
+# Because -feature-wasm-exceptions makes QApplication::exec() unsupported, the
+# app is built as an "async main" (main() returns; the browser drives the Qt
+# event loop). See librecad/src/main/main.cpp (__WASM_EXCEPTIONS__ guard).
+#
+# Emscripten 4.0.7 is used. Qt 6.9 targets 3.1.70, but 3.1.74 (and 3.1.70) ship
+# an embind+JSPI bug where emscripten::async() on a method taking emscripten::val
+# aborts at startup ("WebAssembly.promising(): Argument 0 must be a WebAssembly
+# exported function"). We NEED emscripten::async() to make Qt's DOM event
+# handler a WebAssembly.promising frame (see the handleEvent patch below), so we
+# use emscripten 4.0.7 (Qt 6.11's target) where embind async + JSPI works. It
+# also emits the finalized JSPI API (WebAssembly.promising/Suspending) supported
+# by current Chromium.
+FROM ubuntu:24.04
+
+ARG QT_VERSION=6.9.3
+ARG EMSDK_VERSION=4.0.7
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential cmake ninja-build python3 python3-pip \
+        git curl ca-certificates libxkbcommon0 zlib1g-dev \
+        libgl1-mesa-dev libfontconfig1 libdbus-1-3 libfreetype6-dev \
+        libglib2.0-0 pkg-config xz-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --break-system-packages aqtinstall
+
+# Host Qt (Linux gcc_64) — needed as QT_HOST_PATH for cross-compiling
+RUN aqt install-qt -O /opt/Qt linux desktop ${QT_VERSION} linux_gcc_64
+
+# Qt source (qtbase + qtsvg only, to minimize build time)
+RUN aqt install-src -O /opt/Qt linux ${QT_VERSION} --archives qtbase qtsvg
+
+# Emscripten SDK
+RUN git clone https://github.com/emscripten-core/emsdk.git /opt/emsdk \
+    && /opt/emsdk/emsdk install ${EMSDK_VERSION} \
+    && /opt/emsdk/emsdk activate ${EMSDK_VERSION} \
+    && rm -rf /opt/emsdk/.git
+
+ENV EMSDK=/opt/emsdk
+ENV QT_HOST_PATH=/opt/Qt/${QT_VERSION}/gcc_64
+ENV PATH=/opt/emsdk:/opt/emsdk/upstream/emscripten:${PATH}
+
+# Boost headers (isolated symlink to avoid sysroot conflicts)
+RUN apt-get update && apt-get install -y --no-install-recommends libboost-dev \
+    && mkdir -p /opt/boost/include && ln -s /usr/include/boost /opt/boost/include/boost \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+SHELL ["/bin/bash", "-c"]
+
+# --- JSPI promising-frame patch ---------------------------------------------
+# Qt's WebAssembly platform delivers DOM events (mouse, key, wheel, ...) by
+# calling EventListener::handleEvent, exposed to JS as a *plain* embind class
+# method. Under JSPI a wasm function can only suspend (which QDialog::exec(),
+# combobox popups and nested event loops require) if it is reached through a
+# WebAssembly.promising frame. Emscripten only makes `main` promising, and DOM
+# events are delivered on their own (non-promising) call stack, where Qt runs
+# event delivery synchronously -- so any suspend there aborts with
+# "trying to suspend without WebAssembly.promising".
+#
+# Registering handleEvent with emscripten::async() makes embind wrap its invoker
+# with WebAssembly.promising, so every DOM event is a promising frame and Qt's
+# suspend (qt_asyncify_suspend_js, a WebAssembly.Suspending import) can
+# suspend/resume across it, with JSPI allowing arbitrary nesting. Non-suspending
+# events still run synchronously to completion. (Requires emscripten >= 4.0.x;
+# see the EMSDK_VERSION note above.)
+RUN f=/opt/Qt/${QT_VERSION}/Src/qtbase/src/corelib/platform/wasm/qstdweb.cpp \
+    && grep -q '"handleEvent", &EventListener::handleEvent);' "$f" \
+    && sed -i 's|\.function("handleEvent", &EventListener::handleEvent);|.function("handleEvent", \&EventListener::handleEvent, emscripten::async());|' "$f" \
+    && grep -n "handleEvent" "$f"
+
+# --- Backing-store pixel-format patch (rendering performance) ----------------
+# QWasmBackingStore uses QImage::Format_RGBA8888 (straight alpha) because the
+# bytes are handed to the HTML canvas via putImageData/ImageData, which expects
+# non-premultiplied RGBA. But RGBA8888 is not one of Qt's raster fast-path
+# destination formats: every composite into it (e.g. LibreCAD blitting its
+# ARGB32-premultiplied drawing layers each frame) falls back to the generic
+# 64-bit blend path (blend_untransformed_generic_rgb64 + fetch/storeRGBA8888<->
+# RGBA64), which dominates frame time and drops the canvas to a few fps at
+# HiDPI/large sizes.
+#
+# Switch the backing store to Format_ARGB32_Premultiplied -- Qt's most optimized
+# raster format, matching the ARGB32PM QPixmaps that widgets (and LibreCAD's
+# render layers) use, so composites hit the SIMD qt_blend_argb32_on_argb32 fast
+# path. The straight-alpha RGBA8888 bytes the canvas needs are produced with a
+# single convertToFormat() at flush time (updateTexture), replacing N slow
+# per-composite conversions with one cheap per-frame conversion.
+RUN f=/opt/Qt/${QT_VERSION}/Src/qtbase/src/plugins/platforms/wasm/qwasmbackingstore.cpp \
+    && grep -q 'QImage::Format format = QImage::Format_RGBA8888;' "$f" \
+    && grep -q 'dom::drawImageToWebImageDataArray(m_image, m_webImageDataArray, dirtyRect);' "$f" \
+    && sed -i \
+        -e 's|    QImage::Format format = QImage::Format_RGBA8888;|    QImage::Format format = QImage::Format_ARGB32_Premultiplied;|' \
+        -e 's|    for (const QRect \&dirtyRect : clippedDpiScaledRegion)|    const QImage rgbaImage = m_image.format() == QImage::Format_RGBA8888 ? m_image : m_image.convertToFormat(QImage::Format_RGBA8888);\n    for (const QRect \&dirtyRect : clippedDpiScaledRegion)|' \
+        -e 's|        dom::drawImageToWebImageDataArray(m_image, m_webImageDataArray, dirtyRect);|        dom::drawImageToWebImageDataArray(rgbaImage, m_webImageDataArray, dirtyRect);|' \
+        "$f" \
+    && echo "=== qwasmbackingstore.cpp after patch ===" \
+    && grep -n "Format_ARGB32_Premultiplied\|rgbaImage\|convertToFormat" "$f"
+
+# Build Qt 6.9 for wasm with JSPI (QT_EMSCRIPTEN_ASYNCIFY=2) + native wasm
+# exceptions. Qt's toolchain emits -sJSPI and -fwasm-exceptions via
+# INTERFACE_LINK_OPTIONS/INTERFACE_COMPILE_OPTIONS on the imported targets.
+RUN source /opt/emsdk/emsdk_env.sh \
+    && cd /opt/Qt/${QT_VERSION}/Src/qtbase \
+    && ./configure \
+        -qt-host-path /opt/Qt/${QT_VERSION}/gcc_64 \
+        -platform wasm-emscripten \
+        -prefix /opt/Qt/${QT_VERSION}/wasm_jspi \
+        -device-option QT_EMSCRIPTEN_ASYNCIFY=2 \
+        -feature-wasm-exceptions \
+        -nomake examples \
+        -nomake tests \
+        -release \
+    && cmake --build . --parallel $(nproc) \
+    && cmake --install . \
+    && rm -rf /opt/Qt/${QT_VERSION}/Src/qtbase/CMakeFiles \
+             /opt/Qt/${QT_VERSION}/Src/qtbase/src
+
+# Build qtsvg module against the JSPI-enabled Qt
+RUN source /opt/emsdk/emsdk_env.sh \
+    && cd /opt/Qt/${QT_VERSION}/Src/qtsvg \
+    && /opt/Qt/${QT_VERSION}/wasm_jspi/bin/qt-cmake -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+    && cmake --build . --parallel $(nproc) \
+    && cmake --install . \
+    && rm -rf /opt/Qt/${QT_VERSION}/Src/qtsvg
+
+ENV QT_WASM_PATH=/opt/Qt/${QT_VERSION}/wasm_jspi
+
+WORKDIR /work
+ENTRYPOINT ["/entrypoint.sh"]

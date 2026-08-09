@@ -1,0 +1,171 @@
+librecad/src/ui/components/creators/lc_creatorinvoker.cpp:101:    dlg.exec();
+librecad/src/ui/components/creators/lc_creatorinvoker.cpp:150:    dlg.exec();
+librecad/src/main/main.cpp:98:            if (di.exec()) {
+librecad/src/main/main.cpp:204:    int return_code = app.exec();
+librecad/src/main/console_dxf2pdf/console_dxf2pdf.cpp:208:    return app.exec();
+librecad/src/ui/main/support/lc_appwindowdialogsinvoker.cpp:50:    dlg.exec();
+librecad/src/ui/main/support/lc_appwindowdialogsinvoker.cpp:55:    dlg.exec();
+librecad/src/ui/main/support/lc_appwindowdialogsinvoker.cpp:87:        dlg.exec();  
+librecad/src/ui/main/support/lc_appwindowdialogsinvoker.cpp:105:    dlg.exec();
+librecad/src/ui/main/support/lc_appwindowdialogsinvoker.cpp:110:    return dlg.exec() == QDialog::Accepted;
+librecad/src/ui/main/support/lc_appwindowdialogsinvoker.cpp:115:    bool  result = dlg.exec() == QDialog::Accepted;
+librecad/src/ui/main/support/lc_appwindowdialogsinvoker.cpp:123:    int result = dlg.exec();
+librecad/src/ui/main/support/lc_appwindowdialogsinvoker.cpp:152:        return dlg.exec();
+librecad/src/ui/main/support/lc_appwindowdialogsinvoker.cpp:199:    if (fileDlg.exec() == QDialog::Accepted) {
+librecad/src/lib/printing/lc_printing.cpp:180:        bStartPrinting = (QDialog::Accepted == printDialog.exec());
+librecad/src/lib/printing/lc_printing.cpp:238:            int answer = msgBox.exec();
+librecad/src/ui/dock_widgets/views_list/lc_namedviewslistwidget.cpp:222:    int dialogResult = dlg.exec();
+librecad/src/ui/dock_widgets/layers_tree/lc_layertreewidget.cpp:960:            msgBox.exec();
+librecad/src/ui/dock_widgets/layers_tree/lc_layertreewidget.cpp:971:        msgBox.exec();
+librecad/src/ui/dock_widgets/layers_tree/lc_layertreewidget.cpp:1785:    int result = msgBox.exec();
+librecad/src/ui/dock_widgets/layers_tree/lc_layertreewidget.cpp:1813:    int dialogResult = dlg.exec();
+librecad/src/ui/dock_widgets/layers_tree/lc_layertreewidget.cpp:1893:    int dialogResult = dlg.exec();
+librecad/src/ui/dock_widgets/layers_tree/lc_layertreewidget.cpp:1919:    int dialogResult = dlg.exec();
+librecad/src/ui/dock_widgets/pen_palette/lc_penpalettewidget.cpp:391:    int dialogResult = dlg.exec();
+librecad/src/ui/dock_widgets/pen_palette/lc_penpalettewidget.cpp:1343:    int result = msgBox.exec();
+librecad/src/ui/dock_widgets/pen_palette/lc_penpalettewidget.cpp:1366:    int result = msgBox.exec();
+librecad/src/ui/dock_widgets/pen_palette/lc_penpalettewidget.cpp:1383:    msgBox.exec();
+librecad/src/ui/dock_widgets/pen_palette/lc_penpalettewidget.cpp:1393:    msgBox.exec();
+librecad/src/ui/dock_widgets/pen_palette/lc_penpalettewidget.cpp:1404:    int dlgResult = msgBox.exec();
+librecad/src/ui/main/qc_mdiwindow.cpp:420:    if (dialog.exec()) {
+librecad/src/ui/dock_widgets/entity_info/lc_quickinfowidget.cpp:799:    int dialogResult = dlg.exec();
+librecad/src/ui/main/qc_applicationwindow.cpp:1575:    dlg.exec();
+librecad/src/ui/dialogs/settings/shortcuts/lc_actionsshortcutsdialog.cpp:295:  msgBox.exec();
+librecad/src/ui/dialogs/settings/options_widget/lc_widgetoptionsdialog.cpp:252:    if (dlg.exec()) {
+librecad/src/ui/dialogs/settings/options_widget/lc_widgetoptionsdialog.cpp:420:    if (dlg.exec() == QDialog::Accepted){
+librecad/src/ui/dialogs/settings/options_general/qg_dlgoptionsgeneral.cpp:1149:    if (dlg.exec()) {
+librecad/src/ui/dialogs/settings/options_general/qg_dlgoptionsgeneral.cpp:1160:    if (dlg.exec()) {
+librecad/src/ui/dock_widgets/ucs_list/lc_ucslistwidget.cpp:284:    int dialogResult = dlg.exec();
+librecad/src/ui/dialogs/settings/options_drawing/qg_dlgoptionsdrawing.cpp:397:    if (dlg.exec() == QDialog::Accepted) {
+librecad/src/ui/dialogs/settings/options_drawing/qg_dlgoptionsdrawing.cpp:548:    if (dlgNewDimStyle.exec() == Accepted) {
+librecad/src/ui/dialogs/settings/options_drawing/qg_dlgoptionsdrawing.cpp:588:    if (dimStyleManager.exec() == QDialog::Accepted) {
+librecad/src/ui/dialogs/settings/options_drawing/qg_dlgoptionsdrawing.cpp:639:        if (dimStyleManager.exec() == QDialog::Accepted) {
+librecad/src/ui/dialogs/settings/options_drawing/qg_dlgoptionsdrawing.cpp:705:                    allowRemoval = msgBox.exec() == QMessageBox::Yes;
+librecad/src/ui/dialogs/settings/options_drawing/qg_dlgoptionsdrawing.cpp:713:                allowRemoval = msgBox.exec() == QMessageBox::Yes;
+librecad/src/ui/dialogs/qg_dialogfactory.cpp:149:    if (dlg.exec()) {
+librecad/src/ui/dialogs/qg_dialogfactory.cpp:196:            if (msgBox.exec()==QMessageBox::Ok) {}
+librecad/src/ui/dialogs/qg_dialogfactory.cpp:303:    if (msgBox.exec() == QMessageBox::Ok) {
+librecad/src/ui/dialogs/qg_dialogfactory.cpp:347:        if (dlg.exec()) {
+librecad/src/ui/dialogs/qg_dialogfactory.cpp:382:    if (dlg.exec()) {
+librecad/src/ui/dialogs/qg_dialogfactory.cpp:420:    if (dlg.exec()) {
+librecad/src/ui/dialogs/qg_dialogfactory.cpp:535:    if (msgBox.exec() == QMessageBox::Ok) {
+librecad/src/ui/dialogs/qg_dialogfactory.cpp:588:    if (QDialog::Accepted == fileDlg.exec()) {
+librecad/src/ui/dialogs/qg_dialogfactory.cpp:611:    if (dlg.exec()) {
+librecad/src/ui/dialogs/qg_dialogfactory.cpp:624:    if (dlg.exec()) {
+librecad/src/ui/dialogs/qg_dialogfactory.cpp:637:    if (dlg.exec()) {
+librecad/src/ui/dialogs/qg_dialogfactory.cpp:650:    if (dlg.exec()) {
+librecad/src/ui/dialogs/qg_dialogfactory.cpp:663:    if (dlg.exec()) {
+librecad/src/ui/dialogs/qg_dialogfactory.cpp:676:    if (dlg.exec()) {
+librecad/src/ui/dialogs/qg_dialogfactory.cpp:689:    if (dlg.exec()) {
+librecad/src/ui/dialogs/qg_dialogfactory.cpp:708:    // ret = dlg->exec() == QDialog::Accepted;
+librecad/src/ui/dialogs/qg_dialogfactory.cpp:786:        if (editDialog->exec()) {
+librecad/src/ui/dialogs/qg_dialogfactory.cpp:803:    if (dlg.exec()) {
+librecad/src/ui/dialogs/qg_dialogfactory.cpp:818:    if (dlg.exec()) {
+librecad/src/ui/dialogs/qg_dialogfactory.cpp:835:    if (dlg.exec()) {
+librecad/src/ui/dialogs/qg_dialogfactory.cpp:851:    int result = dlg.exec();
+librecad/src/ui/dialogs/qg_dialogfactory.cpp:857:    return (dlg.exec() == QDialog::Accepted);
+librecad/src/lib/fileio/lc_filenameselectionservice.cpp:66:    if (fileDlg.exec() == QDialog::Accepted) {
+librecad/src/ui/dialogs/lc_inputtextdialog.cpp:51:    if (dlg.exec() == Accepted){
+librecad/src/ui/dialogs/lc_inputtextdialog.cpp:74:    if (dlg.exec() == Accepted){
+librecad/src/ui/dialogs/file/qg_filedialog.cpp:345:        if (fileDlg->exec()==QDialog::Accepted) {
+librecad/src/ui/dialogs/file/qg_filedialog.cpp:497:    if (fileDlg->exec()==QDialog::Accepted) {
+librecad/src/actions/drawing/modify/rs_actionmodifyentity.cpp:178:                if (editDialog->exec()) {
+librecad/src/ui/dialogs/file/export/layers/lc_exportlayersdialogservice.cpp:167:        if (saveFileDialog.exec() == QDialog::Accepted) {
+librecad/src/ui/dialogs/file/export/image/lc_exporttoimageservice.cpp:39:    if (imageOptionsDialog.exec() == QDialog::Accepted) {
+librecad/src/ui/dialogs/entity/lc_entitypropertieseditor.cpp:80:    int result = dlg->exec();
+librecad/src/ui/dialogs/entity/lc_dlgdimension.cpp:460:            if (dimStyleManager.exec() == QDialog::Accepted) {
+librecad/src/ui/dialogs/entity/lc_dlgdimension.cpp:511:            if (dimStyleManager.exec() == QDialog::Accepted) {
+librecad/src/ui/dialogs/entity/lc_dlgdimension.cpp:534:            dimStyleManager.exec();
+librecad/src/ui/dialogs/creators/lc_dlgwidgetcreator.cpp:241:        if (dlgMenuAssigner->exec() == QDialog::Accepted) {
+librecad/src/ui/dialogs/creators/lc_dlgnewwidget.cpp:54:    if (dlg->exec() == QDialog::Accepted) {
+librecad/src/actions/drawing/draw/dimensions/lc_actiondrawgdtfeaturecontrolframe.cpp:47:        if (dlg.exec() == QDialog::Accepted) {
+librecad/src/ui/dock_widgets/views_list/lc_namedviewslistwidget.cpp:247:        int result = QMessageBox::question(this, tr("Delete View"),
+librecad/src/ui/dock_widgets/views_list/lc_namedviewslistwidget.cpp:271:                        int result = QMessageBox::question(this, tr("Delete View"),
+librecad/src/ui/dock_widgets/views_list/lc_namedviewslistwidget.cpp:302:                int result = QMessageBox::question(this, tr("Delete Views"), tr("Are you sure to delete views %1?\nWarning: this action can NOT be undone!").arg(viewsName), QMessageBox::Yes|QMessageBox::No, QMessageBox::No);
+librecad/src/ui/dock_widgets/views_list/lc_namedviewslistwidget.cpp:338:                QMessageBox::warning(this, tr("View Creation"), tr("Empty name of View is not allowed"), QMessageBox::Close, QMessageBox::Close);
+librecad/src/ui/dock_widgets/views_list/lc_namedviewslistwidget.cpp:349:                        QMessageBox::warning(this, tr("View Creation"), tr("View with provided name already exists"), QMessageBox::Close, QMessageBox::Close);
+librecad/src/ui/dock_widgets/views_list/lc_namedviewslistwidget.cpp:371:                QMessageBox::warning(this, tr("View Rename"), tr("Empty name of View is not allowed"), QMessageBox::Close, QMessageBox::Close);
+librecad/src/ui/dock_widgets/views_list/lc_namedviewslistwidget.cpp:378:                    QMessageBox::warning(this, tr("View Rename"), tr("View with provided name already exists, select another one"), QMessageBox::Close,
+librecad/src/ui/dock_widgets/views_list/lc_namedviewslistwidget.cpp:595:       QMessageBox::warning(this, tr("Restore View"), tr("Paper space view is not fully supported yet."), QMessageBox::Close,
+librecad/src/ui/dock_widgets/ucs_list/lc_ucslistwidget.cpp:318:        int result = QMessageBox::question(this, tr("Delete All UCS"),
+librecad/src/ui/dock_widgets/ucs_list/lc_ucslistwidget.cpp:343:                            int result = QMessageBox::question(this, tr("Delete UCS"),
+librecad/src/ui/dock_widgets/ucs_list/lc_ucslistwidget.cpp:377:                int result = QMessageBox::question(this, tr("Delete UCSs"),
+librecad/src/ui/dock_widgets/ucs_list/lc_ucslistwidget.cpp:443:                    QMessageBox::warning(this, tr("Rename UCS"),
+librecad/src/ui/dialogs/qg_dialogfactory.cpp:97:    QMessageBox::information(parent, QMessageBox::tr("Warning"),
+librecad/src/ui/dialogs/qg_dialogfactory.cpp:201:            QMessageBox::information(parent,
+librecad/src/ui/dialogs/qg_dialogfactory.cpp:261:            QMessageBox::information(
+librecad/src/ui/dialogs/qg_dialogfactory.cpp:454:                QMessageBox::warning(parent,
+librecad/src/plugins/lc_plugininvoker.cpp:113:                QMessageBox::information(m_appWindow, "Info", pluginLoader.errorString());
+librecad/src/ui/dock_widgets/ucs_list/lc_dlgucsproperties.cpp:49:        QMessageBox::warning(this, tr("UCS Edit"),
+librecad/src/ui/dock_widgets/ucs_list/lc_dlgucsproperties.cpp:55:        QMessageBox::warning(this, tr("UCS Edit"),
+librecad/src/ui/dialogs/settings/shortcuts/lc_actionsshortcutsdialog.cpp:443:    canClose = QMessageBox::Yes == QMessageBox::question(this, "Confirmation",
+librecad/src/ui/dialogs/file/qg_filedialog.cpp:390:                        QMessageBox::warning(parent, QObject::tr("Save Drawing As"),
+librecad/src/ui/dock_widgets/pen_palette/lc_penpalettewidget.cpp:404:                QMessageBox::warning( this, tr("Pen palette"),
+librecad/src/ui/dock_widgets/pen_palette/lc_penpaletteoptionsdialog.cpp:217:    QMessageBox::warning(this, QMessageBox::tr("Error"),
+librecad/src/ui/main/workspaces/lc_workspacesmanager.cpp:476:                QMessageBox::critical(parent, tr("Saving Workspaces"),
+librecad/src/ui/main/workspaces/lc_workspacesmanager.cpp:484:            QMessageBox::critical(parent, tr("Saving Workspaces"),
+librecad/src/ui/dialogs/file/export/layers/lc_filedialogservice.cpp:230:                int replaceFileResponse = QMessageBox::warning(
+librecad/src/ui/main/support/lc_appwindowdialogsinvoker.cpp:90:        QMessageBox::warning(&dlg, tr("Error"), errorMsg);
+librecad/src/ui/dialogs/file/export/layers/lc_exportlayersdialogservice.cpp:180:                int replaceFileResponse = QMessageBox::warning(
+librecad/src/ui/dialogs/settings/options_widget/lc_widgetoptionsdialog.cpp:403:        QMessageBox::warning(this, tr("Preferences"),
+librecad/src/ui/main/qc_applicationwindow.cpp:894:        QMessageBox::information(this, QMessageBox::tr("Warning"),msg, QMessageBox::Ok);
+librecad/src/ui/main/qc_applicationwindow.cpp:1078:        QMessageBox::information(this, QMessageBox::tr("Warning"), msg, QMessageBox::Ok);
+librecad/src/ui/main/qc_applicationwindow.cpp:1217:            QMessageBox::information(this, QMessageBox::tr("Warning"),
+librecad/src/ui/dock_widgets/layers_tree/lc_layertreewidget.cpp:1110:                QMessageBox::information(parentWidget(),
+librecad/src/ui/dock_widgets/layers_tree/lc_layertreewidget.cpp:1155:                        QMessageBox::information(parentWidget(),
+librecad/src/ui/dock_widgets/layers_tree/lc_layertreewidget.cpp:1163:                    QMessageBox::information(parentWidget(),
+librecad/src/ui/dock_widgets/layers_tree/lc_layertreewidget.cpp:1251:                bool resolvePens = QMessageBox::question(this, title,
+librecad/src/ui/dock_widgets/layers_tree/lc_layertreewidget.cpp:1728:                QMessageBox::information(this, QMessageBox::tr("Remove Layer"), QMessageBox::tr("Layer \"0\" can never be removed."), QMessageBox::Ok);
+librecad/src/ui/dock_widgets/layers_tree/lc_layertreeoptionsdialog.cpp:142://        QMessageBox::warning(this, QMessageBox::tr("Error"),
+librecad/src/ui/dock_widgets/layers_tree/lc_layertreeoptionsdialog.cpp:151:        QMessageBox::warning(this, QMessageBox::tr("Error"),
+librecad/src/ui/dock_widgets/layers_tree/lc_layertreeoptionsdialog.cpp:188:    QMessageBox::warning(this, tr("Error"),
+librecad/src/ui/dialogs/entity/qg_blockdialog.cpp:76:            QMessageBox::warning( this, tr("Renaming Block"),
+librecad/src/ui/dialogs/entity/lc_splinepropertieseditingwidget.cpp:123:            QMessageBox::warning(this, "Error", e.what());
+librecad/src/ui/dialogs/entity/lc_splinepropertieseditingwidget.cpp:135:            QMessageBox::warning(this, "Error", e.what());
+librecad/src/ui/dialogs/entity/lc_splinepropertieseditingwidget.cpp:161:        QMessageBox::warning(this, "Invalid Input", "Please enter a valid number.");
+librecad/src/ui/dialogs/entity/lc_splinepropertieseditingwidget.cpp:186:            QMessageBox::information(this, "Knot Vector Adjusted", "Knot vector size mismatch detected. Regenerated uniform knot vector.");
+librecad/src/ui/dialogs/entity/lc_splinepropertieseditingwidget.cpp:196:        QMessageBox::warning(this, "Error", e.what());
+librecad/src/ui/dialogs/entity/lc_splinepropertieseditingwidget.cpp:215:        QMessageBox::warning(this, "Invalid Input", "Please enter a valid number.");
+librecad/src/ui/dialogs/entity/lc_splinepropertieseditingwidget.cpp:236:            QMessageBox::warning(this, "Invalid Knot", "Knot vector must be non-decreasing");
+librecad/src/ui/dialogs/entity/lc_splinepropertieseditingwidget.cpp:240:        QMessageBox::warning(this, "Invalid Knot", e.what());
+librecad/src/ui/dialogs/entity/lc_splinepropertieseditingwidget.cpp:271:        QMessageBox::warning(this, "Error", e.what());
+librecad/src/ui/dialogs/entity/lc_splinepropertieseditingwidget.cpp:305:        QMessageBox::warning(this, "Error", e.what());
+librecad/src/ui/dialogs/entity/lc_splinepropertieseditingwidget.cpp:338:        QMessageBox::warning(this, "Error", e.what());
+librecad/src/ui/dialogs/entity/lc_splinepropertieseditingwidget.cpp:351:        QMessageBox::warning(this, "Cannot Remove", "Cannot remove control point: minimum number required.");
+librecad/src/ui/dialogs/entity/lc_splinepropertieseditingwidget.cpp:375:        QMessageBox::warning(this, "Error", e.what());
+librecad/src/ui/dock_widgets/layers_tree/lc_layerdialog_ex.cpp:221:        QMessageBox::information(parentWidget(),
+librecad/src/ui/dock_widgets/layers_tree/lc_layerdialog_ex.cpp:288:            QMessageBox::information(parentWidget(),
+librecad/src/lib/engine/settings/lc_settingsexporter.cpp:73:        QMessageBox::critical(parent, tr("Settings Export"), tr("Can't open provided file for writing - check that provided location is writable. Preferences were not exported."));
+librecad/src/lib/engine/settings/lc_settingsexporter.cpp:81:    QMessageBox::information(parent, tr("Settings Export"), tr("Application preferences were exported."));
+librecad/src/lib/engine/settings/lc_settingsexporter.cpp:91:        QMessageBox::critical(parent, tr("Settings Import Error"), tr("Can't open provided file for reading. Preferences were not imported."));
+librecad/src/lib/engine/settings/lc_settingsexporter.cpp:97:        QMessageBox::critical(parent, tr("Settings Import Error"), tr("Unexpected error during preferences parsing. Message:") + parseError.errorString());
+librecad/src/lib/engine/settings/lc_settingsexporter.cpp:101:        QMessageBox::critical(parent, tr("Settings Import Error"), tr("Unexpected format of file, it does not contains LibreCAD preferences."));
+librecad/src/lib/engine/settings/lc_settingsexporter.cpp:106:        QMessageBox::information(parent, tr("Settings Import"), tr("No settings groups to import."));
+librecad/src/lib/engine/settings/lc_settingsexporter.cpp:121:    QMessageBox::information(parent, tr("Settings Import"), tr("Application preferences were imported."));
+librecad/src/ui/dialogs/entity/lc_dlgdimension.cpp:410:                        QMessageBox::critical ( this, tr("Saving Style Override"), tr("Style with such name already exists, please enter another unique one.") );
+librecad/src/ui/dialogs/creators/lc_dlgwidgetcreator.cpp:203:        auto questionResult = QMessageBox::question(this, tr("Unassign menu"),
+librecad/src/ui/dialogs/creators/lc_dlgwidgetcreator.cpp:431:    if (QMessageBox::Yes == QMessageBox::question(this, tr("Remove %1").arg(widgetTypeName),
+librecad/src/ui/dialogs/creators/lc_dlgnewwidget.cpp:67:        QMessageBox::critical(this, tr("Error"), tr("Please enter a name."));
+librecad/src/ui/dialogs/creators/lc_dlgnewwidget.cpp:70:            QMessageBox::critical(this, tr("Error"), tr("Name is not unique. Please enter unique name."));
+librecad/src/ui/dialogs/actions/qg_layerdialog.cpp:82:            QMessageBox::information(parentWidget(),
+librecad/src/ui/dialogs/settings/options_general/qg_dlgoptionsgeneral.cpp:941:        QMessageBox::warning(this, tr("Preferences"),
+librecad/src/ui/dialogs/settings/options_general/qg_dlgoptionsgeneral.cpp:1085:    reply = QMessageBox::question(this, tr("Clear settings"),
+librecad/src/ui/dialogs/settings/options_general/qg_dlgoptionsgeneral.cpp:1090:        QMessageBox::information(this, "info", tr("You must restart LibreCAD to see the changes."));
+librecad/src/ui/dialogs/settings/options_general/qg_dlgoptionsgeneral.cpp:1096:    QMessageBox::information(this, "info", tr("You must restart LibreCAD to see the changes."));
+librecad/src/ui/dialogs/settings/options_drawing/qg_dlgoptionsdrawing.cpp:416:        int response = QMessageBox::warning(
+librecad/src/ui/dialogs/settings/options_drawing/qg_dlgoptionsdrawing.cpp:439:        int response = QMessageBox::warning(
+librecad/src/ui/dialogs/settings/options_drawing/qg_dlgoptionsdrawing.cpp:1600:            QMessageBox::warning(this, tr("Options"),
+librecad/src/ui/dialogs/settings/options_drawing/qg_dlgoptionsdrawing.cpp:1608:            QMessageBox::warning(this, tr("Options"),
+librecad/src/ui/dialogs/settings/options_drawing/lc_dlgnewdimstyle.cpp:142:        QMessageBox::warning(this, tr("New Dimension Style"), tr("Empty name of style is not allowed."));
+librecad/src/ui/dialogs/settings/options_drawing/lc_dlgnewdimstyle.cpp:146:        QMessageBox::warning(this, tr("New Dimension Style"), tr("Provided name of dimension style (%1) is not unique! Please enter another one.").arg(newName));
+librecad/src/ui/dialogs/settings/options_drawing/lc_dlgnewcustomvariable.cpp:50:        QMessageBox::critical(this, tr("New Custom Property"), tr("Property with provided name already exists. Please specify unique name."));
+librecad/src/ui/dialogs/settings/options_drawing/lc_dimstylesexporter.cpp:107:        QMessageBox::critical(parent, tr("Dimension Styles Export Error"),
+librecad/src/ui/dialogs/settings/options_drawing/lc_dimstylesexporter.cpp:117:    QMessageBox::information(parent, tr("Dimension Styles Export"), tr("Dimensions Styles were exported."));
+librecad/src/ui/dialogs/settings/options_drawing/lc_dimstylesexporter.cpp:129:        QMessageBox::critical(parent, errorDialogCaption, tr("Can't open provided file for reading. Dimension styles were not imported."));
+librecad/src/ui/dialogs/settings/options_drawing/lc_dimstylesexporter.cpp:135:        QMessageBox::critical(parent, errorDialogCaption, tr("Unexpected error during dimension styles parsing. Message:") + parseError.errorString());
+librecad/src/ui/dialogs/settings/options_drawing/lc_dimstylesexporter.cpp:139:        QMessageBox::critical(parent, errorDialogCaption, tr("Unexpected format of file, it does not contains LibreCAD dimension styles."));
+librecad/src/ui/dialogs/settings/options_drawing/lc_dimstylesexporter.cpp:145:        QMessageBox::information(parent, tr("Dimension Styles Import"), tr("No dimension styles to import."));
+librecad/src/ui/dialogs/settings/options_drawing/lc_dimstylesexporter.cpp:177:    QMessageBox::information(parent, tr("Dimension Styles Import"), tr("Dimension styles were imported."));
+librecad/src/lib/fileio/rs_fileio.cpp:95:                        QMessageBox::critical( qApp->activeWindow(),
+librecad/src/lib/fileio/rs_fileio.cpp:110:                        QMessageBox::StandardButton answer = QMessageBox::warning( qApp->activeWindow(),
+librecad/src/lib/fileio/rs_fileio.cpp:123:                    QMessageBox::critical( qApp->activeWindow(),

@@ -1,0 +1,77 @@
+name: WASM Build
+on:
+  push:
+    branches: [wasm-port, master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  wasm:
+    name: WebAssembly Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Build Docker image
+        run: docker build -t lcad-wasm:6.8 .wasm/
+
+      - name: Configure and build
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/work \
+            -v lcad-wasm-build:/build \
+            lcad-wasm:6.8 \
+            bash -c 'source /opt/emsdk/emsdk_env.sh && cmake -G Ninja \
+              -DCMAKE_TOOLCHAIN_FILE=$QT_WASM_PATH/lib/cmake/Qt6/qt.toolchain.cmake \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DBUILD_TESTS=OFF \
+              -DBoost_INCLUDE_DIR=/opt/boost/include \
+              -S /work -B /build && cmake --build /build -j$(nproc)'
+
+      - name: Compress assets
+        run: |
+          docker run --rm -v lcad-wasm-build:/build lcad-wasm:6.8 \
+            bash -c 'apt-get update && apt-get install -y brotli gzip && \
+              for f in /build/librecad.wasm /build/librecad.js /build/librecad.data /build/qtloader.js; do \
+                [ -f "$f" ] && brotli -q 11 "$f" -o "$f.br" && gzip -kf "$f"; \
+              done'
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: librecad-wasm
+          path: |
+            build-output/librecad.wasm
+            build-output/librecad.js
+            build-output/librecad.html
+            build-output/librecad.data
+            build-output/qtloader.js
+            build-output/*.br
+            build-output/*.gz
+
+  desktop:
+    name: Desktop Build (configure only)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.3'
+          modules: 'qtsvg'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build libboost-dev libfreetype-dev
+
+      - name: Configure
+        run: cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF -S . -B build
+
+      - name: Build
+        run: cmake --build build -j$(nproc)

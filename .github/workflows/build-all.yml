@@ -1,0 +1,521 @@
+name: Continuous build
+on:
+  push:
+    branches:
+      - master
+      - 2.2.1
+
+jobs:
+  BuildLinux:
+    runs-on: ubuntu-24.04
+    outputs:
+      output1: ${{ steps.artifact-upload-step.outputs.artifact-id }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@main
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -qq install qmake6 qt6-base-dev qt6-declarative-dev qt6-image-formats-plugin-pdf qt6-pdf-dev linguist-qt6
+          sudo apt-get -qq install qt6-svg-dev libqt6svgwidgets6 qt6-l10n-tools qtchooser qt6-wayland-dev qt6-tools-dev
+          sudo apt-get -qq install libgl-dev libxcb-cursor0 libmuparser-dev libboost-dev libssl-dev libssl3
+          sudo apt-get -qq install imagemagick librsvg2-bin libfreetype6-dev libicu-dev pkg-config libfuse2 rsync
+          sudo apt-get -qq install cmake
+
+      - name: Set Dark splash
+        # Test setting dark splash screen for `2.2.2_alpha`,
+        # then switch "Loading..." label text color to white.
+        # Comment this if `master` is used for releases.
+        if: github.ref == 'refs/heads/master'
+        run: |
+          mkdir -p ${{github.workspace}}/librecad/res/main
+          rsync ${{github.workspace}}/desktop/media/splash/librecad01_dark.png ${{github.workspace}}/librecad/res/main/splash_librecad.png
+          sed -i 's/Qt::black/Qt::white/g' ${{github.workspace}}/librecad/src/main/main.cpp
+      - name: Build and analyze
+        run: |
+          echo "cmake"
+          cmake -S . -B unix -DBUILD_TESTS=ON
+          echo "cmake build"
+          cmake --build unix -j$(nproc)
+
+      - name: Run Tests
+        run: |
+          cd unix
+          ./librecad_tests
+
+      - name: Create AppImage
+        run: |
+          QT_FILE_DIR="${{github.workspace}}/../Qt" ./CI/build-appimg.sh
+          mv LibreCAD*.AppImage LibreCAD-`git describe --always`.AppImage
+      - name: List files
+        run: |
+          echo ${{ github.workspace }} && ls ${{ github.workspace }}
+        shell: bash
+
+      - name: Upload artifact
+        id: artifact-upload-step
+        uses: actions/upload-artifact@main
+        with:
+          name: linuxAssets
+          path: LibreCAD*.AppImage
+          retention-days: 2
+
+  BuildLinuxAarch64:
+    runs-on: ubuntu-24.04-arm
+    outputs:
+      output1: ${{ steps.artifact-upload-step.outputs.artifact-id }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@main
+        with:
+          fetch-depth: 0
+
+      - name: Install Qt and dependencies
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -qq install qmake6 qt6-base-dev qt6-declarative-dev qt6-image-formats-plugin-pdf qt6-pdf-dev linguist-qt6
+          sudo apt-get -qq install qt6-svg-dev libqt6svgwidgets6 qt6-l10n-tools qtchooser qt6-wayland-dev qt6-tools-dev
+          sudo apt-get -qq install libgl-dev libxcb-cursor0 libmuparser-dev libboost-dev libssl-dev libssl3
+          sudo apt-get -qq install imagemagick librsvg2-bin libfreetype6-dev libicu-dev pkg-config libfuse2 rsync
+          sudo apt-get -qq install cmake
+
+      - name: Install Clang
+        run: |
+          sudo apt-get -qq install clang-18 clang-tools-18
+
+      - name: Set Dark splash
+        # Test setting dark splash screen for `2.2.2_alpha`,
+        # then switch "Loading..." label text color to white.
+        # Comment this if `master` is used for releases.
+        if: github.ref == 'refs/heads/master'
+        run: |
+          mkdir -p ${{github.workspace}}/librecad/res/main
+          rsync ${{github.workspace}}/desktop/media/splash/librecad01_dark.png ${{github.workspace}}/librecad/res/main/splash_librecad.png
+          sed -i 's/Qt::black/Qt::white/g' ${{github.workspace}}/librecad/src/main/main.cpp
+          sed -i '/fontweight/d' ${{github.workspace}}/librecad/src/ui/dock_widgets/ucs_list/lc_dlgucsproperties.ui
+
+      - name: Build and analyze
+        run: |
+          export CC=clang
+          export CXX=clang++
+          export ANALYZE="scan-build-18 -o out --use-cc=/usr/bin/clang++ --use-analyzer=/usr/bin/clang++ "
+          #${ANALYZE}qmake6 -r librecad.pro CONFIG+=debug_and_release PREFIX=/usr
+          #${ANALYZE}make release -j$(nproc)
+          cmake -S . -B unix
+          cmake --build unix -j$(nproc)
+
+      - name: Create AppImage
+        run: |
+          find unix/
+          ./CI/build-appimg-aarch64.sh
+          #mv LibreCAD*.AppImage LibreCAD-`git describe --always`-aarch64.AppImage
+
+      - name: List files
+        run: |
+          echo ${{ github.workspace }} && ls ${{ github.workspace }}
+        shell: bash
+
+      - name: Upload artifact
+        id: artifact-upload-step
+        uses: actions/upload-artifact@main
+        with:
+          name: linuxAssetsAarch64
+          path: LibreCAD*.AppImage
+          retention-days: 2
+
+  BuildSnap:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@main
+        with:
+          fetch-depth: 0
+          ref: master
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.9.*'
+          modules: 'qt5compat'
+
+      - name: install snap
+        uses: samuelmeuli/action-snapcraft@v2
+
+      - name: Create snapcraft
+        run: |
+          pwd
+          ls
+          ls scripts
+          bash ./scripts/createSnap.sh
+          mv librecad*.snap LibreCAD-`git describe --always`.snap
+
+      - name: Uploading snap
+        uses: actions/upload-artifact@v4
+        with:
+          name: snapAssets
+          path: ${{github.workspace}}/LibreCAD*.snap
+          retention-days: 2
+
+  BuildMacOS:
+    runs-on: macos-14
+    outputs:
+      output1: ${{ steps.artifact-upload-step.outputs.artifact-id }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@main
+        with:
+          fetch-depth: 0
+
+      - name: uninstall p7zip
+        run: |
+          brew uninstall p7zip
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.9.*'
+          modules: 'qt5compat'
+
+      - name: Install boost dependencies
+        run: |
+          brew install boost
+
+      # XProtect can cause random failures if it decides that the DMG we create
+      # during the packaging phase is malware.
+      # TODO: Do it in a cleaner way
+      # Inspiration: https://github.com/servo/servo/pull/30779
+      - name: Kill XProtectBehaviorService
+        run: |
+          echo Killing XProtect.; sudo pkill -9 XProtect >/dev/null || true;
+
+      - name: Build and packaging
+        run: |
+          scripts/build-osx.sh
+          mv LibreCAD.dmg LibreCAD-`git describe --always`.dmg
+
+      - name: Upload artifact
+        id: artifact-upload-step
+        uses: actions/upload-artifact@main
+        with:
+          name: macOSAssets
+          path: LibreCAD*.dmg
+          retention-days: 2
+
+  BuildMacOSArm64:
+    runs-on: macos-14
+    outputs:
+      output1: ${{ steps.artifact-upload-step.outputs.artifact-id }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@main
+        with:
+          fetch-depth: 0
+
+      - name: uninstall p7zip
+        run: |
+          brew uninstall p7zip
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.9.*'
+          modules: 'qt5compat'
+          arch: 'clang_64'
+
+      - name: Install boost dependencies
+        run: |
+          brew install boost
+
+      # XProtect can cause random failures if it decides that the DMG we create
+      # during the packaging phase is malware.
+      # TODO: Do it in a cleaner way
+      # Inspiration: https://github.com/servo/servo/pull/30779
+      - name: Kill XProtectBehaviorService
+        run: |
+          echo Killing XProtect.; sudo pkill -9 XProtect >/dev/null || true;
+
+      - name: Build and packaging
+        env:
+          QMAKE_OPTS: QMAKE_APPLE_DEVICE_ARCHS=arm64
+        run: |
+          scripts/build-osx.sh
+          mv LibreCAD.dmg LibreCAD-`git describe --always`-arm64.dmg
+
+      - name: Upload artifact
+        id: artifact-upload-step
+        uses: actions/upload-artifact@main
+        with:
+          name: macOSArm64Assets
+          path: LibreCAD*.dmg
+          retention-days: 2
+
+  BuildWindows64:
+    runs-on: windows-2022
+    outputs:
+      output1: ${{ steps.artifact-upload-step.outputs.artifact-id }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@main
+        with:
+          fetch-depth: 0
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.9.*'
+          host: 'windows'
+          arch: 'win64_msvc2022_64'
+          target: 'desktop'
+          tools-only: 'false'
+          modules: 'qt3d qt5compat qtimageformats qtshadertools'
+          tools: 'tools_cmake'
+
+      - name: (3) Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Install boost
+        run: |
+          curl -# -L -o boost.7z https://archives.boost.io/release/1.87.0/source/boost_1_87_0.7z
+          7z x -o. -y boost.7z
+          mv boost_1_87_0 boost
+          rm boost.7z
+          pwd
+          ls -ld boost/boost/version.hpp
+        shell: bash
+
+      - name: Configure CMake
+        run: |
+          cmake.exe -S . -B generated -G "Visual Studio 17 2022" -DBOOST_ROOT="%CD%\boost"
+        shell: cmd
+        env:
+          BUILD_TYPE: release
+          MSVC_VER_NUMBER: "Visual Studio 17 2022"
+          CMAKE_CXX_FLAGS: " /MP8"
+
+      - name: Build
+        run: |
+          cmake --build generated --config Release
+        shell: cmd
+
+      - name: listFile
+        run: |
+          cd generated
+          dir *.*
+          dir Release\*.*
+        shell: cmd
+
+      - name: List files
+        run: |
+            echo "${{ github.workspace }}"
+            dir "${{ github.workspace }}"
+        shell: cmd
+
+      - name: Extract version (SCMREVISION)
+        id: extract_version
+        run: |
+          $scmRevision = "2.2.2-alpha"
+          if (Test-Path .git) {
+            $out = (git describe --always 2>$null) | Out-String
+            if ($LASTEXITCODE -eq 0 -and $out.Trim()) { $scmRevision = $out.Trim() }
+          }
+
+          # VIProductVersion must be X.X.X.X with each field <= 65535.
+          # Parse `git describe` output: <major>.<minor>[.<patch>][-anything][-<commits>-g<sha>]
+          $vi = "0.0.0.0"
+          if ($scmRevision -match '^v?(\d+)\.(\d+)(?:\.(\d+))?[^-]*(?:-(\d+))?') {
+            $major = $Matches[1]
+            $minor = $Matches[2]
+            $patch = if ($Matches[3]) { $Matches[3] } else { '0' }
+            $build = if ($Matches[4]) { $Matches[4] } else { '0' }
+            $vi = "$major.$minor.$patch.$build"
+          }
+
+          echo "SCMREVISION=$scmRevision" >> $env:GITHUB_ENV
+          echo "VIProductVersion=$vi" >> $env:GITHUB_ENV
+          echo "Extracted: SCMREVISION=$scmRevision, VIProductVersion=$vi"
+        shell: pwsh
+
+      - name: Generate custom.nsh and Deploy
+        run: |
+          cd "${{ github.workspace }}"
+          powershell.exe -ExecutionPolicy Bypass -File scripts\generate-custom-nsh.ps1 -Architecture AMD64 -OutputPath "scripts\postprocess-windows\custom.nsh"
+
+          cd generated
+          windeployqt6.exe --release --compiler-runtime Release\LibreCAD.exe
+          cd ..
+          xcopy /E /Y /I generated\Release windows
+          for /r generated %%f in (librecad_*.qm) do copy "%%f" librecad\ts\
+          for /r generated %%f in (plugins_*.qm) do copy "%%f" plugins\ts\
+          powershell.exe -ExecutionPolicy Bypass -File scripts\copy-vc-runtime.ps1 -Architecture AMD64 -Destination windows
+          if errorlevel 1 exit /b 1
+          set LC_ARCH=AMD64
+          call "${{ github.workspace }}\scripts\build-nsis.bat"
+        shell: cmd
+
+      - name: Rename installer
+        run: |
+          mv generated/LibreCAD-*.exe LibreCAD-`git describe --always`-win-x64.exe
+        shell: bash
+
+      - name: Upload artifact
+        id: artifact-upload-step
+        uses: actions/upload-artifact@main
+        with:
+          name: win64Assets
+          path: LibreCAD*.exe
+          retention-days: 2
+
+  BuildWindowsARM64:
+    runs-on: windows-11-arm
+    outputs:
+      output1: ${{ steps.artifact-upload-step.outputs.artifact-id }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@main
+        with:
+          fetch-depth: 0
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.9.*'
+          host: 'windows_arm64'
+          arch: 'win64_msvc2022_arm64'
+          target: 'desktop'
+          tools-only: 'false'
+          modules: 'qt5compat qtimageformats qtshadertools'
+          tools: 'tools_cmake'
+
+      - name: (3) Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
+        with:
+          msbuild-architecture: arm64
+
+      - name: Install boost
+        run: |
+          curl -# -L -o boost.7z https://archives.boost.io/release/1.87.0/source/boost_1_87_0.7z
+          7z x -o. -y boost.7z
+          mv boost_1_87_0 boost
+          rm boost.7z
+          pwd
+          ls -ld boost/boost/version.hpp
+        shell: bash
+
+      - name: Configure CMake
+        run: |
+          cmake.exe -S . -B generated -G "Visual Studio 17 2022" -A ARM64 -DBOOST_ROOT="%CD%\boost"
+        shell: cmd
+        env:
+          BUILD_TYPE: release
+          MSVC_VER_NUMBER: "Visual Studio 17 2022"
+          CMAKE_CXX_FLAGS: " /MP8"
+
+      - name: Build
+        run: |
+          cmake --build generated --config Release
+        shell: cmd
+
+      - name: listFile
+        run: |
+          cd generated
+          dir *.*
+          dir ARM64\Release\*.*
+        shell: cmd
+
+      - name: List files
+        run: |
+            echo "${{ github.workspace }}"
+            dir "${{ github.workspace }}"
+        shell: cmd
+
+      - name: Extract version (SCMREVISION)
+        id: extract_version
+        run: |
+          $scmRevision = "2.2.2-alpha"
+          if (Test-Path .git) {
+            $out = (git describe --always 2>$null) | Out-String
+            if ($LASTEXITCODE -eq 0 -and $out.Trim()) { $scmRevision = $out.Trim() }
+          }
+
+          $vi = "0.0.0.0"
+          if ($scmRevision -match '^v?(\d+)\.(\d+)(?:\.(\d+))?[^-]*(?:-(\d+))?') {
+            $major = $Matches[1]
+            $minor = $Matches[2]
+            $patch = if ($Matches[3]) { $Matches[3] } else { '0' }
+            $build = if ($Matches[4]) { $Matches[4] } else { '0' }
+            $vi = "$major.$minor.$patch.$build"
+          }
+
+          echo "SCMREVISION=$scmRevision" >> $env:GITHUB_ENV
+          echo "VIProductVersion=$vi" >> $env:GITHUB_ENV
+          echo "Extracted: SCMREVISION=$scmRevision, VIProductVersion=$vi"
+        shell: pwsh
+
+      - name: Generate custom.nsh and Deploy
+        run: |
+          cd "${{ github.workspace }}"
+          powershell.exe -ExecutionPolicy Bypass -File scripts\generate-custom-nsh.ps1 -Architecture ARM64 -OutputPath "scripts\postprocess-windows\custom.nsh"
+
+          cd generated
+          windeployqt6.exe --release --compiler-runtime ARM64\Release\LibreCAD.exe
+          cd ..
+          xcopy /E /Y /I generated\ARM64\Release windows
+          for /r generated %%f in (librecad_*.qm) do copy "%%f" librecad\ts\
+          for /r generated %%f in (plugins_*.qm) do copy "%%f" plugins\ts\
+          powershell.exe -ExecutionPolicy Bypass -File scripts\copy-vc-runtime.ps1 -Architecture ARM64 -Destination windows
+          if errorlevel 1 exit /b 1
+          set LC_ARCH=ARM64
+          call "${{ github.workspace }}\scripts\build-nsis.bat"
+        shell: cmd
+
+      - name: Rename installer
+        run: |
+          mv generated/LibreCAD-*.exe LibreCAD-`git describe --always`-win-arm64.exe
+        shell: bash
+
+      - name: Upload artifact
+        id: artifact-upload-step
+        uses: actions/upload-artifact@main
+        with:
+          name: winARM64Assets
+          path: LibreCAD*.exe
+          retention-days: 2
+
+  UpdateAssets:
+    if: github.repository_owner == 'LibreCAD'
+    needs: [BuildLinux, BuildLinuxAarch64, BuildMacOS, BuildMacOSArm64, BuildWindows64, BuildWindowsARM64, BuildSnap]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@main
+        with:
+          fetch-depth: 0
+
+      - name: Delete existing
+        run: gh release delete "2.2.2_alpha-latest" -y
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fetch artifacts
+        uses: actions/download-artifact@main
+
+      - name: Upload latest pre-release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Continuous Build: latest development"
+          tag_name: "2.2.2_alpha-latest"
+          prerelease: true
+          draft: false
+          files: |
+            linuxAssets/LibreCAD*.AppImage
+            linuxAssetsAarch64/LibreCAD*.AppImage
+            macOSAssets/LibreCAD*.dmg
+            macOSArm64Assets/LibreCAD*.dmg
+            win64Assets/LibreCAD*.exe
+            winARM64Assets/LibreCAD*.exe
+            snapAssets/LibreCAD*.snap
+            LICENSE

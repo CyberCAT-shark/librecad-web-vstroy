@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a3d62"/>
+      <stop offset="100%" stop-color="#1e5a8e"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="32" fill="url(#bg)" stroke="#0078d4" stroke-width="2"/>
+  <!-- CAD drawing icon: angle + crosshair -->
+  <g stroke="#e0e0e0" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- bottom-left corner to top-right (an L-shape, "L") -->
+    <path d="M 64 64 L 64 192 L 192 192"/>
+    <!-- crosshair at corner -->
+    <line x1="64" y1="48" x2="64" y2="208"/>
+    <line x1="48" y1="64" x2="208" y2="64"/>
+    <!-- angled "C" arc suggesting a CAD arc -->
+    <path d="M 140 64 A 76 76 0 1 1 64 140"/>
+  </g>
+  <!-- accent dot -->
+  <circle cx="64" cy="64" r="6" fill="#f39c12"/>
+  <circle cx="192" cy="192" r="6" fill="#f39c12"/>
+</svg>

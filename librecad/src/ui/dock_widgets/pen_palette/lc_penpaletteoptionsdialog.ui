@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>LC_PenPaletteOptionsDialog</class>
+ <widget class="QDialog" name="LC_PenPaletteOptionsDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>359</width>
+    <height>452</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle">
+   <string>Pen Palette Settings</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="7" column="0">
+    <widget class="QGroupBox" name="groupBox_2">
+     <property name="title">
+      <string>Colors</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_5">
+      <item row="0" column="1">
+       <widget class="QComboBox" name="cbColorActiveBg">
+        <property name="toolTip">
+         <string>Background color for pen element currently edited in pen's table</string>
+        </property>
+        <property name="editable">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="3">
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="cbColorGrid">
+        <property name="toolTip">
+         <string>Color of grid for pens list</string>
+        </property>
+        <property name="editable">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QToolButton" name="tbGridColorSelect">
+        <property name="toolTip">
+         <string>Click to select color</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="../../../../res/controls/controls.qrc">
+          <normaloff>:/controls/colorxx.png</normaloff>:/controls/colorxx.png</iconset>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>Active Pen Background:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QToolButton" name="tbActiveColorSelect">
+        <property name="toolTip">
+         <string>Click to select color</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="../../../../res/controls/controls.qrc">
+          <normaloff>:/controls/colorxx.png</normaloff>:/controls/colorxx.png</iconset>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0" colspan="2">
+       <widget class="QCheckBox" name="cbAllRowBold">
+        <property name="toolTip">
+         <string>If set, bold font is used for all elements of active pen item (otherwise, only for name)</string>
+        </property>
+        <property name="text">
+         <string>Entire table row is bold for active pen</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>Grid Color:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_4">
+        <property name="text">
+         <string>Matched Item Color:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QComboBox" name="cbColorMatchedItem">
+        <property name="toolTip">
+         <string>Color of pen item that is matched by filter</string>
+        </property>
+        <property name="editable">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="2">
+       <widget class="QToolButton" name="tbMatchedItemColorSelect">
+        <property name="toolTip">
+         <string>Click to select color</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="../../../../res/controls/controls.qrc">
+          <normaloff>:/controls/colorxx.png</normaloff>:/controls/colorxx.png</iconset>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QCheckBox" name="cbShowTooltip">
+     <property name="toolTip">
+      <string>Controls whether tooltip will be shown for table item or not</string>
+     </property>
+     <property name="text">
+      <string>Show tooltip for table items</string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="0">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="3" column="0">
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QLabel" name="label_5">
+       <property name="text">
+        <string>On double-click:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="cbDoubleClickMode">
+       <property name="toolTip">
+        <string>Defines how the program to react on double click on pen item in table</string>
+       </property>
+       <property name="currentIndex">
+        <number>-1</number>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item row="6" column="0">
+    <widget class="QGroupBox" name="gbColumns">
+     <property name="title">
+      <string>Columns to display</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="1" column="2">
+       <widget class="QCheckBox" name="chkShowLineTypeName">
+        <property name="text">
+         <string>Line Type Name</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QCheckBox" name="chkShowColorName">
+        <property name="text">
+         <string>Color Name</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QCheckBox" name="chkShowLineTypeIcon">
+        <property name="text">
+         <string>Line Type Icon</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="chkShowColorIcon">
+        <property name="text">
+         <string>Color Icon</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QCheckBox" name="chkShowWidthIcon">
+        <property name="text">
+         <string>Line Width Icon</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QCheckBox" name="chkShowWidthName">
+        <property name="text">
+         <string>Line Width Name</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="4" column="0" rowspan="2">
+    <widget class="QGroupBox" name="groupBox">
+     <property name="title">
+      <string>Show colorn name as</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_3">
+      <item row="0" column="1">
+       <widget class="QRadioButton" name="rbHEX">
+        <property name="toolTip">
+         <string>Hexadecimal value of color</string>
+        </property>
+        <property name="text">
+         <string>HEX</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QRadioButton" name="rbRGB">
+        <property name="toolTip">
+         <string>Red, Green, Blue components of color</string>
+        </property>
+        <property name="text">
+         <string>RGB</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QRadioButton" name="rbNatural">
+        <property name="toolTip">
+         <string>Natural name of color or HEX value of it</string>
+        </property>
+        <property name="text">
+         <string>Natural name where possible</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QCheckBox" name="cbShowMessageForNoSelection">
+     <property name="toolTip">
+      <string>If selected, additional messages will be shown as part of pen related operations</string>
+     </property>
+     <property name="text">
+      <string>Show info message if no entities may be selected by pen</string>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="0">
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QCheckBox" name="cbFilterCaseInsensitive">
+     <property name="toolTip">
+      <string>If set, filter will igore the case of pen's name</string>
+     </property>
+     <property name="text">
+      <string>Case-insensitive pens filtering</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../../../../res/controls/controls.qrc"/>
+  <include location="../../../../res/controls/controls.qrc"/>
+ </resources>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>LC_PenPaletteOptionsDialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>248</x>
+     <y>254</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>157</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>LC_PenPaletteOptionsDialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>316</x>
+     <y>260</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>286</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

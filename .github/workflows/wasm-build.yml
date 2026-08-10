@@ -75,16 +75,16 @@ jobs:
         with:
           submodules: true
 
-      # Без явного arch aqt не может разрешить XML-список модулей для этой
-      # версии/платформы ("packages ['qtsvg'] were not found while parsing
-      # XML of package information") — на Linux он не всегда угадывается
-      # автоматически при указанных modules.
+      # arch пришлось задать явно (без него aqt падал с "The packages ['qtsvg']
+      # were not found while parsing XML of package information" — не мог
+      # разрешить XML модулей). Сам modules: qtsvg — лишний и падал ТОЙ ЖЕ
+      # ошибкой даже с explicit arch: в Qt 6.8.3 QtSvg уже входит в базовую
+      # desktop-установку и больше не отдельный addon-модуль для aqt.
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
           version: '6.8.3'
           arch: 'linux_gcc_64'
-          modules: 'qtsvg'
 
       - name: Install dependencies
         run: |

@@ -38,6 +38,22 @@ jobs:
                 [ -f "$f" ] && brotli -q 11 "$f" -o "$f.br" && gzip -kf "$f"; \
               done'
 
+      # Собранные файлы живут ТОЛЬКО внутри именованного docker-тома
+      # lcad-wasm-build (/build) — upload-artifact ниже читает с обычного
+      # пути build-output/ на хосте runner'а, куда их до этого никто не
+      # копировал. Из-за этого сборка молча завершалась "успехом" без единого
+      # загруженного файла (actions/upload-artifact: "No files were found").
+      - name: Extract build output from volume
+        run: |
+          mkdir -p build-output
+          docker run --rm \
+            -v lcad-wasm-build:/build \
+            -v ${{ github.workspace }}/build-output:/out \
+            lcad-wasm:6.8 \
+            bash -c 'cp /build/librecad.wasm /build/librecad.js /build/librecad.html /build/librecad.data /build/qtloader.js /out/ 2>/dev/null; \
+                     cp /build/*.br /build/*.gz /out/ 2>/dev/null; true'
+          ls -la build-output/
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

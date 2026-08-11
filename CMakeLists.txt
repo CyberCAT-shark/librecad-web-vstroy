@@ -1876,7 +1876,25 @@ set(TS_FILES
 )
 
 # Use qt_add_translations normally, the language warnings are harmless
-qt_add_translations(librecad TS_FILE_DIR ${TS_DIR} TS_FILES ${TS_FILES})
+qt_add_translations(librecad TS_FILE_DIR ${TS_DIR} TS_FILES ${TS_FILES}
+    QM_FILES_OUTPUT_VARIABLE LC_QM_FILES)
+
+# qt_add_translations() above only compiles .ts -> .qm into the build tree —
+# it does NOT make them reachable at runtime. On wasm there is no host
+# filesystem; RS_System::getDirectoryList("qm") (rs_system.cpp) only ever
+# looks under /librecad/support/qm in the Emscripten MEMFS bundle (the same
+# preload mechanism already used for fonts/patterns above), so without this
+# the compiled .qm files exist on disk during the build but are invisible to
+# the running app — main.cpp defaults Language to "ru", but with nothing
+# preloaded at that path RS_System::loadTranslation() silently fails to find
+# librecad_ru.qm and the UI stays in English.
+if(EMSCRIPTEN AND LC_QM_FILES)
+    list(GET LC_QM_FILES 0 LC_QM_FIRST)
+    get_filename_component(LC_QM_DIR "${LC_QM_FIRST}" DIRECTORY)
+    target_link_options(librecad PRIVATE
+        "SHELL:--preload-file ${LC_QM_DIR}@/librecad/support/qm"
+    )
+endif()
 
 # Optional ttf2lff
 if(FREETYPE_FOUND AND NOT WIN32 AND NOT EMSCRIPTEN)

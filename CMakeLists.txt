@@ -1832,11 +1832,29 @@ qt_add_translations(librecad TS_FILE_DIR ${TS_DIR} TS_FILES ${TS_FILES}
 # the running app — main.cpp defaults Language to "ru", but with nothing
 # preloaded at that path RS_System::loadTranslation() silently fails to find
 # librecad_ru.qm and the UI stays in English.
+#
+# IMPORTANT: qt_add_translations() drops the .qm files directly into
+# CMAKE_CURRENT_BINARY_DIR (the top-level build dir) alongside CMakeCache.txt,
+# build.ninja, every .o/.cpp.o object file, autogen output, etc. — NOT a
+# dedicated i18n/ subfolder. A first attempt at this fix took
+# get_filename_component(... DIRECTORY) of one .qm's path and preloaded that
+# whole directory, which silently bundled the ENTIRE build tree into the wasm
+# MEMFS (librecad.data went 30MB -> 144MB). Stage only the real .qm files
+# into a clean directory first, then preload that.
 if(EMSCRIPTEN AND LC_QM_FILES)
-    list(GET LC_QM_FILES 0 LC_QM_FIRST)
-    get_filename_component(LC_QM_DIR "${LC_QM_FIRST}" DIRECTORY)
+    set(LC_QM_STAGE_DIR "${CMAKE_CURRENT_BINARY_DIR}/qm_stage")
+    add_custom_command(
+        OUTPUT "${LC_QM_STAGE_DIR}/.stamp"
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${LC_QM_STAGE_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${LC_QM_FILES} "${LC_QM_STAGE_DIR}/"
+        COMMAND ${CMAKE_COMMAND} -E touch "${LC_QM_STAGE_DIR}/.stamp"
+        DEPENDS ${LC_QM_FILES}
+        COMMENT "Staging compiled .qm translations (ru/en only) for wasm preload"
+    )
+    add_custom_target(lc_qm_stage DEPENDS "${LC_QM_STAGE_DIR}/.stamp")
+    add_dependencies(librecad lc_qm_stage)
     target_link_options(librecad PRIVATE
-        "SHELL:--preload-file ${LC_QM_DIR}@/librecad/support/qm"
+        "SHELL:--preload-file ${LC_QM_STAGE_DIR}@/librecad/support/qm"
     )
 endif()
 

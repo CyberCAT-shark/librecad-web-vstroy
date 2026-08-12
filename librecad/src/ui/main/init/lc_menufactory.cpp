@@ -168,13 +168,10 @@ void LC_MenuFactory::createHelpMenu(QMenuBar* menu_bar, QList<QMenu*>& topMenuMe
     auto license = new QAction(QObject::tr("License"), m_appWin);
     connect(license, &QAction::triggered, m_appWin, &QC_ApplicationWindow::invokeLicenseWindow);
 
-    m_menuHelp->addSeparator();
-    m_menuHelp->QWidget::addAction(urlActionTR(tr("&Forum"), "https://forum.librecad.org/"));
-    m_menuHelp->QWidget::addAction(urlActionTR(tr("Zulip &Chat"), "https://librecad.zulipchat.com/"));
-    m_menuHelp->addSeparator();
-    m_menuHelp->QWidget::addAction(urlActionTR(tr("&Submit Error"), "https://github.com/LibreCAD/LibreCAD/issues/new"));
-    m_menuHelp->QWidget::addAction(urlActionTR(tr("&Request Feature"), "https://github.com/LibreCAD/LibreCAD/issues"));
-    m_menuHelp->QWidget::addAction(urlActionTR(tr("&Releases Page"), "https://github.com/LibreCAD/LibreCAD/releases"));
+    // Форум/Zulip Chat/Submit Error/Request Feature/Releases Page убраны
+    // по прямому запросу пользователя — все вели на upstream-проект
+    // LibreCAD (GitHub issues чужого репозитория, форум/чат сообщества,
+    // которое мы не администрируем), не имели смысла для этого форка.
     m_menuHelp->addSeparator();
     m_menuHelp->QWidget::addAction(help_about);
     m_menuHelp->QWidget::addAction(license);

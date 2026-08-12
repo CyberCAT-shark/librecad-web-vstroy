@@ -141,14 +141,25 @@ void LC_MenuFactory::doCreateMenus(QMenuBar* menu_bar, bool firstCreation) {
 void LC_MenuFactory::createHelpMenu(QMenuBar* menu_bar, QList<QMenu*>& topMenuMenus) {
     m_menuHelp = menu(tr("&Help"), "help", menu_bar);
 
+    // Раньше вели на внешние librecad.org/readthedocs.io — по запросу
+    // пользователя ("скопировать всю онлайн документацию и сделать
+    // читаемой с нашего сервера") зеркало собрано и размещено локально:
+    // - Wiki: полное зеркало dokuwiki.librecad.org через wget --mirror
+    //   (реальные страницы контента, служебные do=edit/revisions/login и
+    //   т.п. исключены явно — это не контент, а формы редактирования).
+    // - User's Manual/Commands/Style Sheets/Widgets: собраны из исходника
+    //   github.com/LibreCAD/docs (тот же Sphinx-проект, что публикует
+    //   readthedocs.io) через sphinx-build, тем же способом, каким сам
+    //   readthedocs это делает — не скрейпинг чужого рендера, а честная
+    //   пересборка из исходников.
     subMenuWithActions(m_menuHelp, tr("On&line Docs"), "OnlineInfo", nullptr, {
-                           urlActionTR(tr("&Wiki"), "https://dokuwiki.librecad.org/"),
-                           urlActionTR(tr("User's &Manual"), "https://librecad.readthedocs.io/"),
-                           urlActionTR(tr("&Commands"), "https://librecad.readthedocs.io/en/latest/ref/tools.html"),
+                           urlActionTR(tr("&Wiki"), "http://2up.kz:888/static/librecad-wiki/doku.php/start.html"),
+                           urlActionTR(tr("User's &Manual"), "http://2up.kz:888/static/librecad-docs/index.html"),
+                           urlActionTR(tr("&Commands"), "http://2up.kz:888/static/librecad-docs/ref/tools.html"),
                            urlActionTR(tr("&Style Sheets"),
-                                       "https://librecad.readthedocs.io/en/latest/ref/customize.html#style-sheets"),
+                                       "http://2up.kz:888/static/librecad-docs/ref/customize.html#style-sheets"),
                            urlActionTR(tr("Wid&gets"),
-                                       "https://librecad.readthedocs.io/en/latest/ref/menu.html#widgets")
+                                       "http://2up.kz:888/static/librecad-docs/ref/menu.html#widgets")
                        });
 
     auto help_about = new QAction(QIcon(":/images/librecad.png"), tr("About"), m_appWin);
